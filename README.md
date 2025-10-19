@@ -1,11 +1,14 @@
-# Final project - A personal blogging system - Team $GROUPNAME
+# Final project - A personal blogging system - Team Blue Cat Four
 
 This repository contains a starting point for your team's final project. We look forward to seeing your progress and your final results this semester!
 
 Your team should update this README to include the information required, as presented in the project handout available on Canvas.
 
 Your team members are:
-$TEAMMEMBERS
+- Leo Mo-yung _(xmu745@aucklanduni.ac.nz)_
+- Yushun Shi _(yshi675@aucklanduni.ac.nz)_
+- Xuan Zeng _(xzen317@aucklanduni.ac.nz)_
+- Zhongwei Zhang _(zahz885@aucklanduni.ac.nz)_
 
 ## Development Environment Setup & Commit Guidelines
 
@@ -42,4 +45,4 @@ If team-members don't need to use PR, then they should be working on feature bra
 
 Correct and **timely** execution of the PR process with evidence of good code review can contribute **significantly** to a better codebase and team member collaboration.
 
-$IMAGE
+![](./Blue%20Cat%20Four.png)
