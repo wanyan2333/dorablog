@@ -1,0 +1,61 @@
+HeaderBar
+|-- Home
+|   |-- SortBtn // control how to sort articles
+|   |-- ArticleContainer // many ariticle card
+|   |   `-- ArticleCard // single article card
+|   |-- PageSelector // bottom pages selector
+|   `-- <footer> 
+|-- Articles
+|   |-- ArticleContainer // many ariticle card
+|   |   `-- ArticleCard // single article card
+|   |-- PageSelector // bottom pages selector
+|   `-- <footer> 
+|-- Favorites (login)
+|   |-- SortBtn
+|   |-- ArticleContainer // many ariticle card
+|   |   `-- ArticleCard // single article card
+|   |-- PageSelector // bottom pages selector
+|   `-- <footer> 
+|-- NewArticle (login)
+|   |-- Preview // show the editing content
+|   |-- Editer // article editer
+|   `-- <footer>
+|-- Search
+|   |-- SearchBar 
+|   |-- SearchResults
+|   |   |-- SearchResItem
+|   `-- <footer>
+|-- Login
+|   |-- <Img> 
+|   |-- LoginForm 
+|   |-- <button>
+|   `-- <footer>
+|-- Register
+|   |-- <Img> 
+|   |-- RegisterForm 
+|   |-- <button>
+|   `-- <footer>
+|-- About
+|   |-- UserCard
+|   |-- <button> // update info or delete account
+|   `-- <footer>
+
+Components
+|-- ArticleCard
+|   |-- <Img> // header image of article
+|   |-- <h2>  // title, author name, avatar icon
+|   |-- <p>  // content of article
+|   |-- <img>  // images for article
+|   |-- <button> // like this article
+|   |-- CommentsCard // show the comments
+
+State & Data Flow Design: 
+
+
+Present Difficulties:
+1. hashing and salting passwords
+2. uploading and storing avatar icon in server
+3. WYSIWYG (what you see is what you get) editor for articles
+4. nesting comments card
+5. the format of article's content, especially for backend. It's not simple string.
+6. for Swing how to send HTTP requests, and to convert between JSON and standard Java objects, from within the Java language
