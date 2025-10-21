@@ -1,0 +1,126 @@
+@charset "utf-8";
+	.image1
+{
+	background-image : url(image1.png);
+	background-repeat : no-repeat;
+	position : absolute ;
+	left : 1018px;
+	top : 764px;
+	width : 37px;
+	height : 37px;
+}
+.st0
+{
+	background : #FFFFFF;
+	background : rgba(255, 255, 255, 1);
+	opacity : 0.65;
+	position : absolute ;
+	left : 0px;
+	top : 951px;
+	width : 1920px;
+	height : 130px;
+	filter: alpha(opacity=65) progid:DXImageTransform.Microsoft.Alpha(opacity=65) ;
+}
+.image5
+{
+	background-image : url(image5.png);
+	background-repeat : no-repeat;
+	position : absolute ;
+	left : 0px;
+	top : 0px;
+	width : 1920px;
+	height : 1080px;
+}
+.image4
+{
+	background-image : url(image4.png);
+	background-repeat : no-repeat;
+	position : absolute ;
+	left : 0px;
+	top : 50px;
+	width : 1920px;
+	height : 129px;
+}
+.st1
+{
+	background : #F5CE5B;
+	background : rgba(245, 206, 91, 1);
+	border-style : Solid;
+	border-color : #000000;
+	border-color : rgba(0, 0, 0, 1);
+	border-width : 1px;
+	position : absolute ;
+	left : 865px;
+	top : 764px;
+	width : 36px;
+	height : 36px;
+	border-radius : 7px;
+	-moz-border-radius : 7px;
+	-webkit-border-radius : 7px;
+}
+.st2
+{
+	background : #FFFFFF;
+	background : rgba(255, 255, 255, 1);
+	opacity : 0.8;
+	position : absolute ;
+	left : 45px;
+	top : 465px;
+	width : 408px;
+	height : 177px;
+	border-radius : 0px 0px 25px 25px;
+	-moz-border-radius : 0px 0px 25px 25px;
+	-webkit-border-radius : 0px 0px 25px 25px;
+	filter: alpha(opacity=80) progid:DXImageTransform.Microsoft.Alpha(opacity=80) ;
+}
+.st
+{
+	font-family : Microsoft YaHei UI;
+	font-weight : bold;
+	font-size : 21px;
+	letter-spacing : -0.52px;
+	position : relative;
+	top : 5px;
+	color : #000000;
+	color : rgb(0, 0, 0);
+}
+.image
+{
+	background-image : url(image.png);
+	background-repeat : no-repeat;
+	position : absolute ;
+	left : 965px;
+	top : 764px;
+	width : 37px;
+	height : 37px;
+}
+.image3
+{
+	background-image : url(image3.png);
+	background-repeat : no-repeat;
+	position : absolute ;
+	left : 45px;
+	top : 234px;
+	width : 1807px;
+	height : 409px;
+}
+.image2
+{
+	background-image : url(image2.png);
+	background-repeat : no-repeat;
+	position : absolute ;
+	left : 916px;
+	top : 764px;
+	width : 37px;
+	height : 37px;
+}
+.st3
+{
+	font-family : Microsoft YaHei UI;
+	font-weight : bold;
+	font-size : 21px;
+	color : #000000;
+	color : rgb(0, 0, 0);
+	opacity : 0.43;
+	filter: alpha(opacity=43) progid:DXImageTransform.Microsoft.Alpha(opacity=43) ;
+}
