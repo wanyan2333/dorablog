@@ -66,9 +66,11 @@ router.post("/login", async (req, res) => {
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return res.status(401).json({ error: "Incorrect password" });
 
-  const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET || "dev", {
-    expiresIn: "7d"
-  });
+  const token = jwt.sign(
+    { id: user.id, username: user.username },
+    process.env.JWT_SECRET || "dev",
+    { expiresIn: "7d" }
+  );
   setAuthCookie(res, token);
 
   return res.json({ message: "Login successful", user: { id: user.id, username: user.username } });
@@ -82,6 +84,8 @@ router.post("/logout", (req, res) => {
 
 /** GET /api/auth/userInfo → return current user */
 router.get('/userInfo', requireAuth, (req, res) => {
+  console.log('userInfo hit, req.user =', req.user);
+  res.set('Cache-Control', 'no-store');
   return res.json({ user: req.user });
 });
 
