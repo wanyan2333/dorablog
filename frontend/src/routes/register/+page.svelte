@@ -1,15 +1,15 @@
 <script>
   import { api } from '$lib/api';
-  let userName='', password='', confirm='', realName='', birthDate='', description='';
+  let username='', password='', confirm='', realname='', birthdate='', description='';
   let busy=false, error='', success='';
 
   async function submit(){
     error=''; success=''; busy=true;
     if(password!==confirm){ error='Passwords do not match'; busy=false; return; }
     try{
-      await api('/api/register', {
+      await api('/api/auth/register', {
         method:'POST',
-        body: JSON.stringify({ userName, password, confirm, realName, birthDate, description })
+        body: JSON.stringify({ username, password, confirm, realname, birthdate, description })
       });
       success='Registration successful! Redirecting to login...';
       setTimeout(()=> location.href='/login', 1000);
@@ -23,11 +23,11 @@
   <div class="auth-card">
     <h2>Register DoraBlog</h2>
     <form on:submit|preventDefault={submit}>
-      <input placeholder="username" bind:value={userName} required />
+      <input placeholder="username" bind:value={username} required />
       <input type="password" placeholder="password" bind:value={password} required />
       <input type="password" placeholder="confirm password" bind:value={confirm} required />
-      <input placeholder="real name (optional)" bind:value={realName} />
-      <input placeholder="birthDate (optional, e.g. 2000-01-01)" bind:value={birthDate} />
+      <input placeholder="real name (optional)" bind:value={realname} />
+      <input placeholder="birthdate (optional, e.g. 2000-01-01)" bind:value={birthdate} />
       <textarea placeholder="About me (optional)" bind:value={description}></textarea>
 
       {#if error}<p class="msg error">{error}</p>{/if}

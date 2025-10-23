@@ -7,8 +7,8 @@ const MESSAGES_URL = `${PUBLIC_API_BASE_URL}/messages`;
  *
  * You may need other *.js files with other load functions too.
  */
-export async function load({ fetch }) {
-  const response = await fetch(MESSAGES_URL, { credentials: "include" });
-  const messages = await response.json();
-  return { messages };
-}
+// export async function load({ fetch }) {
+//   const response = await fetch(MESSAGES_URL, { credentials: "include" });
+//   const messages = await response.json();
+//   return { messages };
+// }

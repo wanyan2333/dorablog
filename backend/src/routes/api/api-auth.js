@@ -1,52 +1,95 @@
-/**
- * API route to handle user authentication (login/logout).
- * This file is copied from the course repository.
- * 
- * @author: Andrew Meads
- */
+import { Router } from "express";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { getDatabase } from "../../data/database.js";
+import { requireAuth } from "../../middleware/auth.js";
 
-import express from "express";
-import { createUserJWT } from "../../utils/jwt-utils.js";
-import { getUserWithCredentials } from "../../data/users-dao.js";
+const router = Router();
 
-const router = express.Router();
-
-/**
- * Sending a POST request to /api/auth with a valid username and password will authenticate a user (log that user in) and
- * return the JWT auth token set as the "authToken" HTTP-only cookie. In addition, the user's username will be sent back
- * as JSON, in the response. This can be used to display the user's username on the frontend if required.
- *
- * If the user is already logged in, this will remove any old login details and replace the cookie with the new one.
- *
- * Sending invalid credentials will result in a 401. No difference between invalid username and invalid password.
- */
-router.post("/", (req, res) => {
-  // Get user with provided login details; return 401 if not found
-  const { username, password } = req.body;
-  console.log(username, password);
-  getUserWithCredentials(username, password).then((user) => {
-    if (!user) return res.sendStatus(401);
-
-    // Create user JWT token and send it back as a HTTP-only cookie along with a 204 status.
-    const jwtToken = createUserJWT(user.username);
-
-    // Expires 24 hours from now
-    const expires = new Date(Date.now() + 86400000);
-
-    // Send the JWT token in an HTTP-only cookie named authToken which expires in 24 hours.
-    return res.cookie("authToken", jwtToken, { httpOnly: true, expires }).json({ username });
+function setAuthCookie(res, token) {
+  res.cookie("token", token, {
+    httpOnly: true,
+    sameSite: "lax",
+    maxAge: 7 * 24 * 3600 * 1000,
+    secure: false
   });
+}
+
+/** POST /api/auth/register  body: { username, password, confirm, realname?, birthdate?, description?, avatar? } */
+router.post("/register", async (req, res) => {
+  const { username, password, confirm, realname, birthdate, description, avatar } = req.body || {};
+  if (!username || !password || !confirm) {
+    return res.status(400).json({ error: "Missing field" });
+  }
+  if (password !== confirm) {
+    return res.status(400).json({ error: "Passwords do not match" });
+  }
+  try {
+    const db = await getDatabase();
+    const hash = await bcrypt.hash(password, 10);
+    await db.run(
+      `INSERT INTO users (username, passwordHash, realname, birthdate, description, avatarUrl)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [username, hash, realname || "", birthdate || "", description || "", avatar || ""]
+    );
+    return res.status(201).json({ message: "Registration successful" });
+  } catch (e) {
+    if (String(e).includes("UNIQUE")) {
+      return res.status(409).json({ error: "Username already taken" });
+    }
+    console.error(e);
+    return res.status(500).json({ error: "Server error" });
+  }
 });
 
-/**
- * Sending a DELETE request to /api/auth will invalidate the authToken cookie, essentially causing that user to be logged out.
- *
- * Since there's no harm in invalidating a cookie which doesn't exist, we don't need to check if the user is actually logged in
- * or not first.
- */
-router.delete("/", (req, res) => {
-  const expires = new Date(0); // Setting the expiry time of the cookie to some time in the past will cause it to be deleted.
-  return res.cookie("authToken", "", { httpOnly: true, expires }).sendStatus(204);
+/** GET /api/auth/registered?username=xxx → { registered: true/false } */
+router.get("/registered", async (req, res) => {
+  const username = req.query.username;
+  if (!username) return res.status(400).json({ error: "Missing username" });
+  const db = await getDatabase();
+  const row = await db.get("SELECT 1 FROM users WHERE username = ?", [username]);
+  return res.json({ registered: !!row });
+});
+
+/** POST /api/auth/login  body: { username, password } → set Cookie and return basic user */
+router.post("/login", async (req, res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error: "Missing field" });
+
+  const db = await getDatabase();
+  const user = await db.get(
+    "SELECT id, username, passwordHash FROM Users WHERE username = ?",
+    [username]
+  );
+  if (!user) return res.status(401).json({ error: "User not found" });
+
+  const ok = await bcrypt.compare(password, user.passwordHash);
+  if (!ok) return res.status(401).json({ error: "Incorrect password" });
+
+  const token = jwt.sign(
+    { id: user.id, username: user.username },
+    process.env.JWT_SECRET || "dev",
+    { expiresIn: "7d" }
+  );
+  setAuthCookie(res, token);
+
+  return res.json({ message: "Login successful", user: { id: user.id, username: user.username } });
+});
+
+/** POST /api/auth/logout → clear Cookie */
+router.post("/logout", (req, res) => {
+  res.clearCookie("token");
+  return res.json({ message: "Logout successful" });
+});
+
+/** GET /api/auth/userInfo → return current user */
+router.get('/userInfo', requireAuth, (req, res) => {
+  console.log('userInfo hit, req.user =', req.user);
+  res.set('Cache-Control', 'no-store');
+  return res.json({ user: req.user });
 });
 
 export default router;
+
+
+
