@@ -14,8 +14,6 @@ import articleRoutes from "./api-articles.js";
 router.use("/articles", articleRoutes);
 import commentRoutes from "./api-comments.js";
 router.use("/comments", commentRoutes);
-import authRoutes from "./auth.js";
-router.use("/", authRoutes);
 
 
 export default router;
