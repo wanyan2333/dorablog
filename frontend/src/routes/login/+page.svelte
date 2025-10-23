@@ -1,12 +1,12 @@
 <script>
   import { api } from '$lib/api';
   import { loadMe } from '$lib/session';
-  let userName='', password='', busy=false, error='', success='';
+  let username='', password='', busy=false, error='', success='';
 
   async function submit() {
     error=''; success=''; busy=true;
     try {
-      await api('/api/login', { method:'POST', body: JSON.stringify({ userName, password }) });
+      await api('/api/auth/login', { method:'POST', body: JSON.stringify({ username, password }) });
       await loadMe();
       success='Login successful, redirecting...';
       setTimeout(()=> location.href='/', 1000);
@@ -20,7 +20,7 @@
   <div class="auth-card">
     <h2>Login DoraBlog</h2>
     <form on:submit|preventDefault={submit}>
-      <input placeholder="username" bind:value={userName} required />
+      <input placeholder="username" bind:value={username} required />
       <input type="password" placeholder="password" bind:value={password} required />
       {#if error}<p class="msg error">{error}</p>{/if}
       {#if success}<p class="msg success">{success}</p>{/if}

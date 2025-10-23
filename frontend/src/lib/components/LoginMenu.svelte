@@ -10,7 +10,7 @@
   function gotoLogin() { window.location.href = '/login'; }
 
   async function logout() {
-    await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/logout`, {
+    await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/logout`, {
       method: 'POST',
       credentials: 'include'
     });
@@ -35,7 +35,7 @@
         <span class="ring">
           <img src="/favicon.png" alt="avatar" class="avatar" />
         </span>
-        <span class="name">{user.userName}</span>
+        <span class="name">{user.username}</span>
         <svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none">
           <path d="M6 9l6 6 6-6" stroke="#0b74d8" stroke-width="2" stroke-linecap="round"/>
         </svg>

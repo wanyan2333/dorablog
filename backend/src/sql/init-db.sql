@@ -2,9 +2,9 @@
 
 -- CREATE TABLE IF NOT EXISTS users (
 --   id            INTEGER PRIMARY KEY AUTOINCREMENT,
---   userName      TEXT UNIQUE NOT NULL,
+--   username      TEXT UNIQUE NOT NULL,
 --   passwordHash  TEXT NOT NULL,
---   realName      TEXT DEFAULT '',
+--   realname      TEXT DEFAULT '',
 --   birthDate     TEXT DEFAULT '',
 --   admin         INTEGER DEFAULT 0,
 --   description   TEXT DEFAULT '',
@@ -12,9 +12,9 @@
 --   createdAt     TEXT DEFAULT (datetime('now'))
 -- );
 
--- CREATE INDEX IF NOT EXISTS idx_users_userName ON users(userName);
+-- CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
--- 示例用户（userName: Zachary, 密码: password123）
+-- 示例用户（username: Zachary, 密码: password123）
 -- 下方为 bcrypt 10 轮哈希：`password123`
 
 DROP TABLE IF EXISTS Messages;
@@ -33,11 +33,12 @@ CREATE TABLE Messages (
 );
 
 -- Create users information table
-CREATE TABLE users (
+CREATE TABLE Users (
     id INTEGER NOT NULL PRIMARY KEY,
-    userName VARCHAR(50) NOT NULL,
-    password VARCHAR(50) NOT NULL,
-    realName VARCHAR(100),
+    username VARCHAR(50) NOT NULL,
+    passwordHash VARCHAR(255) NOT NULL,
+    realname VARCHAR(100),
+    birthDate DATETIME,
     admin BOOLEAN DEFAULT FALSE,
     description TEXT,
     avatarUrl TEXT,
