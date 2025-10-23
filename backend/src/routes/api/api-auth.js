@@ -15,9 +15,9 @@ function setAuthCookie(res, token) {
   });
 }
 
-/** POST /api/register  body: { username, password, confirm, realname?, birthDate?, description?, avatar? } */
+/** POST /api/auth/register  body: { username, password, confirm, realname?, birthdate?, description?, avatar? } */
 router.post("/register", async (req, res) => {
-  const { username, password, confirm, realname, birthDate, description, avatar } = req.body || {};
+  const { username, password, confirm, realname, birthdate, description, avatar } = req.body || {};
   if (!username || !password || !confirm) {
     return res.status(400).json({ error: "Missing field" });
   }
@@ -28,9 +28,9 @@ router.post("/register", async (req, res) => {
     const db = await getDatabase();
     const hash = await bcrypt.hash(password, 10);
     await db.run(
-      `INSERT INTO users (username, passwordHash, realname, birthDate, description, avatarUrl)
+      `INSERT INTO users (username, passwordHash, realname, birthdate, description, avatarUrl)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [username, hash, realname || "", birthDate || "", description || "", avatar || ""]
+      [username, hash, realname || "", birthdate || "", description || "", avatar || ""]
     );
     return res.status(201).json({ message: "Registration successful" });
   } catch (e) {
@@ -42,7 +42,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-/** GET /api/registered?username=xxx → { registered: true/false } */
+/** GET /api/auth/registered?username=xxx → { registered: true/false } */
 router.get("/registered", async (req, res) => {
   const username = req.query.username;
   if (!username) return res.status(400).json({ error: "Missing username" });
@@ -51,7 +51,7 @@ router.get("/registered", async (req, res) => {
   return res.json({ registered: !!row });
 });
 
-/** POST /api/login  body: { username, password } → set Cookie and return basic user */
+/** POST /api/auth/login  body: { username, password } → set Cookie and return basic user */
 router.post("/login", async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: "Missing field" });
@@ -74,15 +74,18 @@ router.post("/login", async (req, res) => {
   return res.json({ message: "Login successful", user: { id: user.id, username: user.username } });
 });
 
-/** POST /api/logout → clear Cookie */
+/** POST /api/auth/logout → clear Cookie */
 router.post("/logout", (req, res) => {
   res.clearCookie("token");
   return res.json({ message: "Logout successful" });
 });
 
-/** GET /api/userInfo → return the currently logged-in user (based on Cookie) */
-router.get("/userInfo", requireAuth, async (req, res) => {
+/** GET /api/auth/userInfo → return current user */
+router.get('/userInfo', requireAuth, (req, res) => {
   return res.json({ user: req.user });
 });
 
 export default router;
+
+
+

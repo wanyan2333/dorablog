@@ -18,7 +18,7 @@
 /api/users/Info(get)  // get info of user
 
 /api/users/Info(post) // creat new user, register
-    username, password, realname, birthDate, description, avatarUrl
+    username, password, realname, birthdate, description, avatarUrl
       Finished
 
 /api/articles(post)  // post new article
@@ -78,7 +78,7 @@ Notes
 - Route ordering: specific routes (e.g. /search, /user/:id) must appear before catch-all param routes like /:id.
 
 Data models (commonly returned)
-- User: { id(number), username, password, realname, birthDate(date), admin(bool), description, avatarUrl }
+- User: { id(number), username, password, realname, birthdate(date), admin(bool), description, avatarUrl }
 - Article: { id, title, date, content, userId, headerUrl, likeCount? }
 - Comment: { id, date, content, userId, articleId, parentCommentId }
 - ArticleLike: { articleId, userId }
@@ -137,7 +137,7 @@ GET /api/users/Info
 
 POST /api/users/Info
 - Purpose: register new user
-- Body: { "username":"joe", "password":"pass", "realname":"Joe", "birthDate":"1990-01-01", "description":"", "avatarUrl":"" }
+- Body: { "username":"joe", "password":"pass", "realname":"Joe", "birthdate":"1990-01-01", "description":"", "avatarUrl":"" }
 - Response 201: created user object
 - Response 400: validation error
 

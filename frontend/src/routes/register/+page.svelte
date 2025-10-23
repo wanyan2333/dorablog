@@ -1,6 +1,6 @@
 <script>
   import { api } from '$lib/api';
-  let username='', password='', confirm='', realname='', birthDate='', description='';
+  let username='', password='', confirm='', realname='', birthdate='', description='';
   let busy=false, error='', success='';
 
   async function submit(){
@@ -9,7 +9,7 @@
     try{
       await api('/api/auth/register', {
         method:'POST',
-        body: JSON.stringify({ username, password, confirm, realname, birthDate, description })
+        body: JSON.stringify({ username, password, confirm, realname, birthdate, description })
       });
       success='Registration successful! Redirecting to login...';
       setTimeout(()=> location.href='/login', 1000);
@@ -27,7 +27,7 @@
       <input type="password" placeholder="password" bind:value={password} required />
       <input type="password" placeholder="confirm password" bind:value={confirm} required />
       <input placeholder="real name (optional)" bind:value={realname} />
-      <input placeholder="birthDate (optional, e.g. 2000-01-01)" bind:value={birthDate} />
+      <input placeholder="birthdate (optional, e.g. 2000-01-01)" bind:value={birthdate} />
       <textarea placeholder="About me (optional)" bind:value={description}></textarea>
 
       {#if error}<p class="msg error">{error}</p>{/if}
