@@ -7,7 +7,7 @@
   $: path = $page.url.pathname;
 </script>
 
-<nav>
+<!-- <nav>
   <p>This is the navbar. You will need to style this (if you even want a navbar at all...)</p>
   <ul>
     <li><a href="/" class:active={path === "/"}>Home</a></li>
@@ -16,6 +16,7 @@
 <div>
   <LoginMenu />
 </div>
-<div class="container">
-  <slot />
-</div>
+</nav> -->
+
+ <slot />
+
