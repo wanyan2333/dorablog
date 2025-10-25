@@ -4,8 +4,44 @@ import jwt from "jsonwebtoken";
 import { getDatabase } from "../../data/database.js";
 import { requireAuth } from "../../middleware/auth.js";
 import { hashPassword, verifyPassword, validatePasswordStrength } from "../../utils/password-utils.js";
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 const router = Router();
+
+// 配置multer用于头像上传
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'avatars');
+    // 确保上传目录存在
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // 生成唯一文件名：时间戳 + 随机数 + 原扩展名
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'avatar-' + uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 2 * 1024 * 1024 // 2MB限制
+  },
+  fileFilter: function (req, file, cb) {
+    // 只允许图片文件
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
 
 function setAuthCookie(res, token) {
   res.cookie("token", token, {
@@ -18,10 +54,12 @@ function setAuthCookie(res, token) {
 
 /** POST /api/auth/register  body: { username, password, confirm, realname?, birthdate?, description?, avatar? } */
 router.post("/register", async (req, res) => {
+  console.log('Registration request received:', req.body);
   const { username, password, confirm, realname, birthdate, description, avatar } = req.body || {};
   
   // 基本字段验证
   if (!username || !password || !confirm) {
+    console.log('Missing required fields:', { username: !!username, password: !!password, confirm: !!confirm });
     return res.status(400).json({ error: "Missing field" });
   }
   
@@ -52,28 +90,33 @@ router.post("/register", async (req, res) => {
   }
   
   try {
+    console.log('Connecting to database...');
     const db = await getDatabase();
+    console.log('Database connected successfully');
     
     // 使用改进的密码哈希
+    console.log('Hashing password...');
     const hash = await hashPassword(password);
+    console.log('Password hashed successfully');
     
+    console.log('Inserting user into database...');
     await db.run(
       `INSERT INTO Users (username, passwordHash, realname, birthdate, description, avatarUrl)
        VALUES (?, ?, ?, ?, ?, ?)`,
       [username, hash, realname || "", birthdate || "", description || "", avatar || ""]
     );
     
-    console.log(`New user registered: ${username}`);
+    console.log(`New user registered successfully: ${username}`);
     return res.status(201).json({ 
       message: "Registration successful",
       passwordStrength: passwordValidation.strength
     });
   } catch (e) {
+    console.error('Registration error details:', e);
     if (String(e).includes("UNIQUE")) {
       return res.status(409).json({ error: "Username already taken" });
     }
-    console.error('Registration error:', e);
-    return res.status(500).json({ error: "Server error" });
+    return res.status(500).json({ error: "Server error: " + e.message });
   }
 });
 
@@ -151,10 +194,59 @@ router.post("/logout", (req, res) => {
 });
 
 /** GET /api/auth/userInfo → return current user */
-router.get('/userInfo', requireAuth, (req, res) => {
+router.get('/userInfo', requireAuth, async (req, res) => {
   console.log('userInfo hit, req.user =', req.user);
   res.set('Cache-Control', 'no-store');
-  return res.json({ user: req.user });
+  
+  try {
+    // 从数据库获取完整的用户信息
+    const db = await getDatabase();
+    const user = await db.get(
+      'SELECT id, username, realname, birthdate, admin, description, avatarUrl FROM Users WHERE id = ?',
+      [req.user.id]
+    );
+    
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    
+    console.log('User info for userInfo API:', user);
+    console.log('Avatar URL from database:', user.avatarUrl);
+    
+    return res.json({ user });
+  } catch (error) {
+    console.error('Error fetching user info:', error);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+// 头像上传端点
+router.post("/upload-avatar", upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    // 返回头像URL
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    
+    // 将图片信息保存到Images表
+    const db = await getDatabase();
+    await db.run(
+      `INSERT INTO Images (url) VALUES (?)`,
+      [avatarUrl]
+    );
+    
+    console.log('Avatar uploaded and saved to database:', req.file.filename);
+    res.json({ 
+      success: true, 
+      avatarUrl: avatarUrl,
+      filename: req.file.filename 
+    });
+  } catch (error) {
+    console.error('Avatar upload error:', error);
+    res.status(500).json({ error: "Failed to upload avatar" });
+  }
 });
 
 export default router;

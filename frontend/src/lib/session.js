@@ -10,8 +10,11 @@ export async function loadMe() {
     });
     if (!res.ok) return userStore.set(null);
     const { user } = await res.json();
+    console.log('User loaded from API:', user);
+    console.log('User avatarUrl:', user.avatarUrl);
     userStore.set(user);
-  } catch {
+  } catch (error) {
+    console.error('Error loading user:', error);
     userStore.set(null);
   }
 }

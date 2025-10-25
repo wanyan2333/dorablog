@@ -6,7 +6,7 @@ import bcrypt from "bcrypt";
  */
 
 // 配置参数
-const BCRYPT_ROUNDS = 12; // 增加工作因子，提高安全性
+const BCRYPT_ROUNDS = 10; // 与数据库中的示例数据保持一致
 const MIN_PASSWORD_LENGTH = 6;
 const MAX_PASSWORD_LENGTH = 128;
 
