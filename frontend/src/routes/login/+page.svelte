@@ -18,7 +18,15 @@
 <div class="auth-page">
   <div class="overlay"></div>
   <div class="auth-card">
-    <h2>Login DoraBlog</h2>
+    <div class="card-header">
+      <button class="home-btn" on:click={() => location.href='/'} aria-label="Back to Home">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M9 22V12H15V22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <h2>Login DoraBlog</h2>
+    </div>
     <form on:submit|preventDefault={submit}>
       <input placeholder="username" bind:value={username} required />
       <input type="password" placeholder="password" bind:value={password} required />
@@ -59,10 +67,41 @@
     text-align: center;
   }
 
+  .card-header {
+    position: relative;
+    margin-bottom: 24px;
+  }
+
+  .home-btn {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: rgba(255,255,255,0.9);
+    border: 2px solid #bcdfff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #0b74d8;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(11,116,216,0.15);
+  }
+
+  .home-btn:hover {
+    background: #e7f4ff;
+    border-color: #49b3ff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(11,116,216,0.25);
+  }
+
   h2 {
     color: #0b74d8;
     font-weight: 700;
-    margin-bottom: 24px;
+    margin: 0;
+    text-align: center;
   }
 
   input {

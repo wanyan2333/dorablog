@@ -4,6 +4,10 @@
 
   let open = false;
   $: user = $userStore;
+  $: if (user) {
+    console.log('User data in LoginMenu:', user);
+    console.log('Avatar URL:', user.avatarUrl);
+  }
 
   onMount(() => loadMe());
 
@@ -33,7 +37,21 @@
     <div class="user">
       <button class="btn-user" on:click={() => (open = !open)} aria-haspopup="menu" aria-expanded={open}>
         <span class="ring">
-          <img src="/favicon.png" alt="avatar" class="avatar" />
+          {#if user.avatarUrl}
+            <img 
+              src={user.avatarUrl.startsWith('http') || user.avatarUrl.startsWith('/avatars/') ? user.avatarUrl : `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${user.avatarUrl}`} 
+              alt="avatar" 
+              class="avatar" 
+              on:error={(e) => {
+                console.error('Avatar image failed to load:', user.avatarUrl);
+                e.target.style.display = 'none';
+                e.target.nextElementSibling.style.display = 'flex';
+              }}
+            />
+            <div class="initial-avatar" style="display: none;">{user.username?.charAt(0)?.toUpperCase() || 'U'}</div>
+          {:else}
+            <div class="initial-avatar">{user.username?.charAt(0)?.toUpperCase() || 'U'}</div>
+          {/if}
         </span>
         <span class="name">{user.username}</span>
         <svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -83,12 +101,19 @@
   .user { position: relative; }
   .btn-user {
     display: inline-flex; align-items: center; gap: 10px;
-    background: #ffffff; border: 2px solid #7fc6ff;
-    color: #0b74d8; padding: 8px 14px; border-radius: 999px;
-    font-weight: 700; box-shadow: 0 6px 18px rgba(0,0,0,.12);
-    cursor: pointer;
+    background: linear-gradient(135deg, #e0f2ff 0%, #f0f8ff 100%);
+    border: 1px solid #bcdfff;
+    color: #0b74d8; padding: 8px 16px; border-radius: 20px;
+    font-weight: 600; box-shadow: 0 4px 12px rgba(11,116,216,0.1);
+    cursor: pointer; transition: all 0.3s ease;
+    backdrop-filter: blur(6px);
   }
-  .btn-user:hover { background:#e7f4ff; }
+  .btn-user:hover { 
+    background: linear-gradient(135deg, #d7edff 0%, #e7f4ff 100%);
+    border-color: #7fc6ff;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(11,116,216,0.15);
+  }
   .ring { position: relative; display: inline-flex; }
   .ring::before {
     content:""; position:absolute; inset:-3px; border-radius: 50%;
@@ -96,14 +121,31 @@
     filter: blur(.6px); z-index:0;
   }
   .avatar { position:relative; z-index:1; width:26px; height:26px; border-radius:50%; border:2px solid #fff; background:#e8f4ff; object-fit:cover; }
+
+  .initial-avatar {
+    position: relative;
+    z-index: 1;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    background: linear-gradient(135deg, #0b74d8 0%, #49b3ff 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
   .name { max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .caret { margin-left:-2px; }
 
   .dropdown {
     position:absolute; top: calc(100% + 8px); right:0;
-    min-width: 160px; padding: 6px;
-    background: rgba(255,255,255,.85); backdrop-filter: blur(8px);
-    border: 1px solid #d7eaff; border-radius: 14px; box-shadow: 0 12px 28px rgba(0,0,0,.18);
+    min-width: 160px; padding: 8px;
+    background: linear-gradient(135deg, rgba(224,242,255,0.95) 0%, rgba(240,248,255,0.95) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid #bcdfff; border-radius: 16px; box-shadow: 0 8px 24px rgba(11,116,216,0.15);
     display:grid; gap:4px; z-index:1000;
   }
   .item {
