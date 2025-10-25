@@ -1,13 +1,22 @@
 import { getDatabase } from "./database.js";
 
 /**
- * Gets all articles in the database.
+ * Gets all articles in the database with user information.
  * 
- * @returns array of article objects
+ * @returns array of article objects with user data
  */
 export async function getAllArticles() {
   const db = await getDatabase();
-  const articles = await db.all("SELECT * FROM Articles");
+  const articles = await db.all(`
+    SELECT 
+      Articles.*,
+      Users.username as author,
+      Users.realname as authorRealName,
+      Users.avatarUrl as authorAvatar
+    FROM Articles 
+    LEFT JOIN Users ON Articles.userId = Users.id 
+    ORDER BY Articles.date DESC
+  `);
   return articles;
 }
 

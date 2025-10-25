@@ -118,7 +118,16 @@ INSERT INTO Users (username, passwordHash, realname, admin, description, avatarU
     ('david', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'David Wilson', FALSE, 'Travel lover.', 'http://example.com/avatar7.jpg'),
     ('eve', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Eve Davis', FALSE, 'Food blogger.', 'http://example.com/avatar8.jpg'),
     ('frank', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Frank Miller', FALSE, 'Sports fan.', 'http://example.com/avatar9.jpg'),
-    ('grace', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Grace Lee', FALSE, 'Health and wellness advocate.', 'http://example.com/avatar10.jpg');
+    ('grace', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Grace Lee', FALSE, 'Health and wellness advocate.', 'http://example.com/avatar10.jpg'),
+    --11
+    ('steven', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5','Steven Shi', FALSE, 'Tech enthusiast.', '/src/assets/images/avatar-stevenshi.png'),
+    --12
+    ('leo', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Leo Mo-yung',FALSE,'Data Scientist. ',  '/src/assets/images/avatar-leo.png'),
+    --13
+    ('zhongwei', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Zhongwei Zhang',FALSE,' Software engineer. ','/src/assets/images/avatar-zhongwei.png'),
+    --14
+    ('xuan', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Xuan Zeng',FALSE,'Product manager.', '/src/assets/images/avatar-xuan.png');
+
 
 -- Dummy articles data
 INSERT INTO Articles (title, date, content, userId, headerUrl) VALUES
@@ -129,7 +138,15 @@ INSERT INTO Articles (title, date, content, userId, headerUrl) VALUES
     ('Fifth Article', '2024-01-05 14:00:00', 'This is the content of the fifth article.', 6, 'http://example.com/header5.jpg'),
     ('Sixth Article', '2024-01-06 15:00:00', 'This is the content of the sixth article.', 7, 'http://example.com/header6.jpg'),
     ('Seventh Article', '2024-01-07 16:00:00', 'This is the content of the seventh article.', 8, 'http://example.com/header7.jpg'),
-    ('Eighth Article', '2024-01-08 17:00:00', 'This is the content of the eighth article.', 9, 'http://example.com/header8.jpg');
+    ('Eighth Article', '2024-01-08 17:00:00', 'This is the content of the eighth article.', 9, 'http://example.com/header8.jpg'),
+      --9 articles
+    ('Terrible Semester with Hard Work', datetime('now'), 'This semester have so much hard work which from COMPSCI 718 and COMPSCI719 TAT...', 11, '/src/assets/images/doraemon1.png'),
+    --10 articles
+    ('Journey to the Art World with Monet', datetime('now', '-1 day'), 'Have you seen this genuine Monet painting of the black cat? I visited it recently and I am sure it must have been painted by Monet himself', 12, '/src/assets/images/doraemon2.png'),
+    --11 articles
+    ('Take a Photo of two Interesting Cats', datetime('now', '-2 days'), 'I recently took a photo of an interesting big orange cat. I like its intelligent eyes and the tilt of its head', 13, '/src/assets/images/doraemon3.png'),
+    --12 articles
+    ('Planning for Lazy Days of Vacation', datetime('now', '-3 days'), 'When I finish my exams I am going to lie in bed like this cat eating snacks and playing games I am really looking forward to this vacation!', 14, '/src/assets/images/doraemon4.png');
 
 -- Dummy comments data
 INSERT INTO Comments (date, content, userId, articleId, parentCommentId) VALUES
@@ -167,7 +184,11 @@ INSERT INTO ArticleImg (articleId, imgUrl) VALUES
     (5, 'http://example.com/image1.jpg'),
     (6, 'http://example.com/image2.jpg'),
     (7, 'http://example.com/image3.jpg'),
-    (8, 'http://example.com/image4.jpg');
+    (8, 'http://example.com/image4.jpg'),
+    (9, 'https://drive.google.com/file/d/1iQKrVb94fRGQ80zRbic_vRSvmV3oTsmH/view?usp=share_link'),
+    (10, 'https://drive.google.com/file/d/13HAVq4neqpVScudHuSwDa7T6yTwj0hvF/view?usp=share_link'),
+    (11, 'https://drive.google.com/file/d/1miEOpHvhhYRzkyXzavocGNO-AS9INm2L/view?usp=share_link'),
+    (12, 'https://drive.google.com/file/d/13LPFVp5auLrxhTgwNKgoHEKa75-CYMiz/view?usp=share_link');
 
 -- Dummy article-like relations
 INSERT INTO ArticleLike (articleId, userId) VALUES
@@ -180,7 +201,11 @@ INSERT INTO ArticleLike (articleId, userId) VALUES
     (5, 9),
     (6, 10),
     (7, 2),
-    (8, 3);
+    (8, 3),
+    (9,1),(9,2),(9,3),(9,4),( 9,5),
+    (10,1),(10,2),(10,3),(10,4),(10,5),(10,6),(10,7),(10,8),
+    (11,1),(11,2),(11,3),(11,4),(11,5),
+    (12,1),(12,2),(12,3),(12,4),(12,5),(12,6),(12,7);
 
 -- Dummy article-tag relations
 INSERT INTO ArticleTag (articleId, tag, color) VALUES
@@ -192,4 +217,8 @@ INSERT INTO ArticleTag (articleId, tag, color) VALUES
     (5, 'Food', 'yellow'),
     (6, 'Education', 'pink'),
     (7, 'Entertainment', 'cyan'),
-    (8, 'Sports', 'magenta');
+    (8, 'Sports', 'magenta'),
+    (9, 'Study', 'brown'),
+    (10, 'Art', 'teal'),
+    (11, 'Photography', 'navy'),
+    (12, 'Vacation', 'lime');
