@@ -106,18 +106,19 @@ INSERT INTO Messages (message) VALUES
     ('Hello, world!'),
     ('Gotta catch ''em all!');
 
--- Dummy user data
-INSERT INTO Users (username, password, realname, admin, description, avatarUrl) VALUES
-    ('admin', 'adminpass', 'Admin User', TRUE, 'Administrator of the system.', 'http://example.com/avatar1.jpg'),
-    ('johndoe', 'password123', 'John Doe', FALSE, 'Just a regular user.', 'http://example.com/avatar2.jpg'),
-    ('janedoe', 'mypassword', 'Jane Doe', FALSE, 'Loves to read articles.', 'http://example.com/avatar3.jpg'),
-    ('alice', 'alicepass', 'Alice Smith', FALSE, 'Enjoys writing comments.', 'http://example.com/avatar4.jpg'),
-    ('bob', 'bobpass', 'Bob Johnson', FALSE, 'Avid article liker.', 'http://example.com/avatar5.jpg'),
-    ('charlie', 'charliepass', 'Charlie Brown', FALSE, 'Tech enthusiast.', 'http://example.com/avatar6.jpg'),
-    ('david', 'davidpass', 'David Wilson', FALSE, 'Travel lover.', 'http://example.com/avatar7.jpg'),
-    ('eve', 'evepass', 'Eve Davis', FALSE, 'Food blogger.', 'http://example.com/avatar8.jpg'),
-    ('frank', 'frankpass', 'Frank Miller', FALSE, 'Sports fan.', 'http://example.com/avatar9.jpg'),
-    ('grace', 'gracepass', 'Grace Lee', FALSE, 'Health and wellness advocate.', 'http://example.com/avatar10.jpg');
+-- Dummy user data (with bcrypt hashed passwords)
+-- Note: These are example hashed passwords for testing
+INSERT INTO Users (username, passwordHash, realname, admin, description, avatarUrl) VALUES
+    ('admin', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Admin User', TRUE, 'Administrator of the system.', 'http://example.com/avatar1.jpg'),
+    ('johndoe', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'John Doe', FALSE, 'Just a regular user.', 'http://example.com/avatar2.jpg'),
+    ('janedoe', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Jane Doe', FALSE, 'Loves to read articles.', 'http://example.com/avatar3.jpg'),
+    ('alice', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Alice Smith', FALSE, 'Enjoys writing comments.', 'http://example.com/avatar4.jpg'),
+    ('bob', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Bob Johnson', FALSE, 'Avid article liker.', 'http://example.com/avatar5.jpg'),
+    ('charlie', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Charlie Brown', FALSE, 'Tech enthusiast.', 'http://example.com/avatar6.jpg'),
+    ('david', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'David Wilson', FALSE, 'Travel lover.', 'http://example.com/avatar7.jpg'),
+    ('eve', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Eve Davis', FALSE, 'Food blogger.', 'http://example.com/avatar8.jpg'),
+    ('frank', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Frank Miller', FALSE, 'Sports fan.', 'http://example.com/avatar9.jpg'),
+    ('grace', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Grace Lee', FALSE, 'Health and wellness advocate.', 'http://example.com/avatar10.jpg');
 
 -- Dummy articles data
 INSERT INTO Articles (title, date, content, userId, headerUrl) VALUES
