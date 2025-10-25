@@ -1,7 +1,6 @@
 <script>
   import ArticleDetailCard from "$lib/components/article/ArticleDetailCard.svelte";
   import SidebarAuthor from "$lib/components/article/SidebarAuthor.svelte";
-  import SidebarActions from "$lib/components/article/SidebarActions.svelte";
   import SidebarRecommend from "$lib/components/article/SidebarRecommend.svelte";
   import CommentsList from "$lib/components/comment/CommentsList.svelte";
 
@@ -27,7 +26,6 @@
 
   <aside class="aside">
     <SidebarAuthor name={article.author.name} avatar={article.author.avatar} />
-    <SidebarActions />
     <SidebarRecommend />
   </aside>
 </div>
