@@ -233,18 +233,93 @@ INSERT INTO ArticleImg (articleId, imgUrl) VALUES
     (10, 'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=800&h=600&fit=crop'),
     (10, 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&h=600&fit=crop');
 
--- Dummy article-like relations
+-- Dummy article-like relations (multiple likes per article)
 INSERT INTO ArticleLike (articleId, userId) VALUES
+    -- Article 1: Web Development (8 likes)
     (1, 3),
     (1, 4),
+    (1, 5),
+    (1, 6),
+    (1, 7),
+    (1, 8),
+    (1, 9),
+    (1, 10),
+    -- Article 2: Photography (7 likes)
+    (2, 2),
+    (2, 4),
     (2, 5),
     (2, 6),
+    (2, 8),
+    (2, 9),
+    (2, 10),
+    -- Article 3: Healthy Living (9 likes)
+    (3, 2),
+    (3, 3),
+    (3, 4),
+    (3, 5),
+    (3, 6),
     (3, 7),
-    (4, 8),
+    (3, 8),
+    (3, 9),
+    (3, 10),
+    -- Article 4: Travel (6 likes)
+    (4, 2),
+    (4, 3),
+    (4, 5),
+    (4, 7),
+    (4, 9),
+    (4, 10),
+    -- Article 5: JavaScript (10 likes - most popular!)
+    (5, 2),
+    (5, 3),
+    (5, 4),
+    (5, 5),
+    (5, 6),
+    (5, 7),
+    (5, 8),
     (5, 9),
+    (5, 10),
+    (5, 1),
+    -- Article 6: AI (8 likes)
+    (6, 2),
+    (6, 3),
+    (6, 4),
+    (6, 5),
+    (6, 7),
+    (6, 8),
+    (6, 9),
     (6, 10),
-    (7, 2),
-    (8, 3);
+    -- Article 7: Cooking (5 likes)
+    (7, 3),
+    (7, 4),
+    (7, 6),
+    (7, 8),
+    (7, 10),
+    -- Article 8: Sustainable Living (7 likes)
+    (8, 2),
+    (8, 3),
+    (8, 5),
+    (8, 6),
+    (8, 7),
+    (8, 9),
+    (8, 10),
+    -- Article 9: Fitness (6 likes)
+    (9, 3),
+    (9, 4),
+    (9, 5),
+    (9, 7),
+    (9, 8),
+    (9, 10),
+    -- Article 10: Digital Marketing (9 likes)
+    (10, 2),
+    (10, 3),
+    (10, 4),
+    (10, 5),
+    (10, 6),
+    (10, 7),
+    (10, 8),
+    (10, 9),
+    (10, 10);
 
 -- Dummy article-tag relations
 INSERT INTO ArticleTag (articleId, tag, color) VALUES
