@@ -14,3 +14,13 @@ export async function api(path, options = {}) {
   if (!res.ok) throw new Error(data?.error || 'request failed');
   return data;
 }
+
+// 获取所有文章列表
+export async function getArticles() {
+  return await api('/api/articles');
+}
+
+// 根据ID获取单篇文章
+export async function getArticleById(id) {
+  return await api(`/api/articles/${id}`);
+}

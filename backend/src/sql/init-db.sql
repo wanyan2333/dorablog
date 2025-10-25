@@ -331,4 +331,8 @@ INSERT INTO ArticleTag (articleId, tag, color) VALUES
     (5, 'Food', 'yellow'),
     (6, 'Education', 'pink'),
     (7, 'Entertainment', 'cyan'),
-    (8, 'Sports', 'magenta');
+    (8, 'Sports', 'magenta'),
+    (9, 'Study', 'brown'),
+    (10, 'Art', 'teal'),
+    (11, 'Photography', 'navy'),
+    (12, 'Vacation', 'lime');
