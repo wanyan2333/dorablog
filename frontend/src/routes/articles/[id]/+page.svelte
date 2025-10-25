@@ -17,6 +17,8 @@
       images={article.images}
       date={article.date}
       authorName={article.author.name}
+      articleId={article.id}
+      initialLikeCount={article.likeCount}
     />
   </main>
 

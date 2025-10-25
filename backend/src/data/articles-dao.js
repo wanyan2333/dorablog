@@ -13,12 +13,43 @@ export async function getAllArticles() {
 
 /**
  * Gets the article with the given articleId, if it exists.
+ * Includes author information, content images, and like count.
  * @param {number} articleId the article id
  * @returns article object if found, null otherwise
  */
 export async function getArticleById(articleId) {
   const db = await getDatabase();
-  const article = await db.get("SELECT * FROM Articles WHERE id = ?", articleId);
+  
+  // Get article with author information
+  const article = await db.get(`
+    SELECT 
+      Articles.*,
+      Users.username as authorUsername,
+      Users.realname as authorRealname,
+      Users.avatarUrl as authorAvatar
+    FROM Articles
+    LEFT JOIN Users ON Articles.userId = Users.id
+    WHERE Articles.id = ?
+  `, articleId);
+  
+  if (!article) {
+    return null;
+  }
+  
+  // Get content images for this article
+  const images = await db.all(
+    "SELECT imgUrl FROM ArticleImg WHERE articleId = ?",
+    articleId
+  );
+  article.images = images.map(img => img.imgUrl);
+  
+  // Get like count
+  const likeCount = await db.get(
+    "SELECT COUNT(*) as count FROM ArticleLike WHERE articleId = ?",
+    articleId
+  );
+  article.likeCount = likeCount.count;
+  
   return article;
 }
 
