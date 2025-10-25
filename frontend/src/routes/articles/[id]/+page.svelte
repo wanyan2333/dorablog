@@ -33,18 +33,34 @@
 <style>
   .grid {
     display: grid;
-    gap: 24px;
+    gap: 32px;
+    grid-template-columns: minmax(auto, 750px) minmax(auto, 380px);
+    padding-left: 80px;
+    padding-right: 20px;
+  }
+
+  .main {
+    width: 100%;
+    min-width: 300px;
   }
 
   .aside {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    width: 100%;
+    min-width: 280px;
   }
 
   @media (max-width: 1200px) {
     .grid {
       grid-template-columns: 1fr !important;
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+
+    .main {
+      max-width: 100%;
     }
 
     .aside {
