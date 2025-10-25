@@ -3,6 +3,7 @@
 export const load = async ({ params }) => {
   return {
     article: {
+      id: 1, // Add article ID for comments
       slug: params.slug,
       title: 'Journey to the Art World with Monet',
       content:

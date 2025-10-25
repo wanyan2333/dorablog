@@ -135,19 +135,19 @@ INSERT INTO Articles (title, date, content, userId, headerUrl) VALUES
 INSERT INTO Comments (date, content, userId, articleId, parentCommentId) VALUES
     ('2024-01-01 12:00:00', 'Great article!', 3, 1, NULL),
     ('2024-01-01 12:30:00', 'Thanks for sharing.', 4, 1, NULL),
-    ('2024-01-02 13:00:00', 'Interesting read.', 5, 2, NULL),
-    ('2024-01-02 13:15:00', 'I learned a lot.', 6, 2, 2),
-    ('2024-01-03 15:00:00', 'Well written!', 7, 3, NULL),
-    ('2024-01-03 15:20:00', 'Looking forward to more.', 8, 3, 3),
-    ('2024-01-04 10:30:00', 'Nice insights.', 9, 4, NULL),
-    ('2024-01-04 10:45:00', 'Appreciate the info.', 10, 4, 4),
-    ('2024-01-05 17:00:00', 'Very helpful.', 2, 5, NULL),
-    ('2024-01-05 17:15:00', 'Good job!', 3, 5, NULL),
-    ('2024-01-06 14:30:00', 'Excellent article.', 4, 6, NULL),
-    ('2024-01-06 14:45:00', 'Keep it up!', 5, 6, NULL),
-    ('2024-01-07 16:00:00', 'Loved it!', 6, 7, 10),
-    ('2024-01-07 16:20:00', 'Very informative.', 7, 7, NULL),
-    ('2024-01-08 13:30:00', 'Great insights.', 8, 8, NULL);
+    ('2024-01-02 13:00:00', 'Interesting read.', 5, 1, 1),
+    ('2024-01-02 13:15:00', 'I learned a lot.', 6, 1, 2),
+    ('2024-01-03 15:00:00', 'Well written!', 7, 1, 3),
+    ('2024-01-03 15:20:00', 'Looking forward to more.', 8, 1, 3),
+    ('2024-01-04 10:30:00', 'Nice insights.', 9, 1, 5),
+    ('2024-01-04 10:45:00', 'Appreciate the info.', 10, 1, 4),
+    ('2024-01-05 17:00:00', 'Very helpful.', 2, 1, NULL),
+    ('2024-01-05 17:15:00', 'Good job!', 3, 1, 2),
+    ('2024-01-06 14:30:00', 'Excellent article.', 4, 1, 10),
+    ('2024-01-06 14:45:00', 'Keep it up!', 5, 1, 11),
+    ('2024-01-07 16:00:00', 'Loved it!', 6, 1, 10),
+    ('2024-01-07 16:20:00', 'Very informative.', 7, 1, 12),
+    ('2024-01-08 13:30:00', 'Great insights.', 8, 1, 11);
 
 -- Dummy images data
 INSERT INTO Images (url) VALUES
