@@ -1,6 +1,6 @@
 import express from "express";
 import { requiresAuthentication } from "../../middleware/auth-middleware.js";
-import { getAllArticles, getArticleById, getArticlesByUserId, getLikedUsers, searchArticles, toggleArticleLike } from "../../data/articles-dao.js";
+import { getAllArticles, getArticleById, getArticlesByUserId, getLikedUsers, searchArticles, toggleArticleLike, createArticle } from "../../data/articles-dao.js";
 const router = express.Router();
 
 /**
@@ -64,6 +64,51 @@ router.get("/:id", (req, res) => {
       return res.status(404).json({ message: "Article not found" });
     }
   });
+});
+
+/**
+ * Sending a POST request to /api/articles/ will create a new article.
+ * Authentication temporarily disabled for testing.
+ */
+router.post("/", async (req, res) => {
+  try {
+    const { title, content, tag, headerImage, contentImages } = req.body;
+    
+    // Validate required fields
+    if (!title || !content) {
+      return res.status(400).json({ message: "Title and content are required" });
+    }
+    
+    // Validate content length
+    if (title.length > 200) {
+      return res.status(400).json({ message: "Title must be less than 200 characters" });
+    }
+    
+    if (content.length > 10000) {
+      return res.status(400).json({ message: "Content must be less than 10,000 characters" });
+    }
+    
+    // Create article data (使用默认用户ID进行测试)
+    const articleData = {
+      title: title.trim(),
+      content: content.trim(),
+      userId: 2, // 使用默认用户ID (johndoe)
+      headerUrl: headerImage || null,
+      tag: tag || null
+    };
+    
+    // Create the article
+    const createdArticle = await createArticle(articleData);
+    
+    return res.status(201).json({
+      message: "Article created successfully",
+      article: createdArticle
+    });
+    
+  } catch (error) {
+    console.error("Error creating article:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 export default router;

@@ -138,4 +138,65 @@ export async function toggleArticleLike(articleId, userId) {
   }
 }
 
+/**
+ * Creates a new article in the database.
+ * @param {Object} articleData - The article data
+ * @param {string} articleData.title - The article title
+ * @param {string} articleData.content - The article content
+ * @param {number} articleData.userId - The user ID who created the article
+ * @param {string} articleData.headerUrl - The header image URL (optional)
+ * @param {string} articleData.tag - The article tag
+ * @returns {Object} The created article object
+ */
+export async function createArticle(articleData) {
+  const db = await getDatabase();
+  const { title, content, userId, headerUrl, tag } = articleData;
+  
+  if (!title || !content || !userId) {
+    throw new Error("Title, content, and userId are required");
+  }
+  
+  // Insert the article
+  const result = await db.run(
+    `INSERT INTO Articles (title, content, userId, headerUrl, date) 
+     VALUES (?, ?, ?, ?, datetime('now'))`,
+    [title, content, userId, headerUrl || null]
+  );
+  
+  const articleId = result.lastID;
+  
+  // Add tag if provided
+  if (tag) {
+    await db.run(
+      "INSERT INTO ArticleTag (articleId, tag, color) VALUES (?, ?, ?)",
+      [articleId, tag, getTagColor(tag)]
+    );
+  }
+  
+  // Return the created article
+  const createdArticle = await getArticleById(articleId);
+  return createdArticle;
+}
+
+/**
+ * Gets the color for a tag (simple color assignment)
+ * @param {string} tag - The tag name
+ * @returns {string} The color for the tag
+ */
+function getTagColor(tag) {
+  const colors = {
+    'Technology': 'blue',
+    'Lifestyle': 'green', 
+    'Travel': 'orange',
+    'Game': 'purple',
+    'Health': 'red',
+    'Food': 'yellow',
+    'Education': 'cyan',
+    'Entertainment': 'pink',
+    'Sports': 'magenta',
+    'News': 'gray'
+  };
+  return colors[tag] || 'gray';
+}
+
 
