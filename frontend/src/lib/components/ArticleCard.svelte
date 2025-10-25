@@ -1,5 +1,6 @@
 <script>
   export let article = {
+    id: 1,
     avatar: '/images/doraemon1.png',
     title: 'Sample Article',
     author: 'Steven Shi',
@@ -119,6 +120,7 @@
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
 }
 
