@@ -1,8 +1,9 @@
 <script>
-  import ArticleDetailCard from '$lib/components/article/ArticleDetailCard.svelte';
-  import SidebarAuthor from '$lib/components/article/SidebarAuthor.svelte';
-  import SidebarActions from '$lib/components/article/SidebarActions.svelte';
-  import SidebarRecommend from '$lib/components/article/SidebarRecommend.svelte';
+  import ArticleDetailCard from "$lib/components/article/ArticleDetailCard.svelte";
+  import SidebarAuthor from "$lib/components/article/SidebarAuthor.svelte";
+  import SidebarActions from "$lib/components/article/SidebarActions.svelte";
+  import SidebarRecommend from "$lib/components/article/SidebarRecommend.svelte";
+  import CommentsList from "$lib/components/comment/CommentsList.svelte";
 
   export let data;
   const { article } = data;
@@ -18,6 +19,8 @@
       date={article.date}
       authorName={article.author.name}
     />
+
+    <CommentsList articleId={article.id} articleAuthorId={article.userId} />
   </main>
 
   <aside class="aside">
