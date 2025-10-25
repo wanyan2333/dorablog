@@ -42,6 +42,9 @@
   .main {
     width: 100%;
     min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* 进一步减少文章和评论之间的间距 */
   }
 
   .aside {
@@ -55,8 +58,10 @@
   @media (max-width: 1200px) {
     .grid {
       grid-template-columns: 1fr !important;
-      padding-left: 20px;
-      padding-right: 20px;
+      padding-left: 40px;
+      padding-right: 40px;
+      max-width: 800px; /* 限制最大宽度，增加留白 */
+      margin: 0 auto; /* 居中显示 */
     }
 
     .main {
@@ -65,6 +70,15 @@
 
     .aside {
       order: 2;
+    }
+  }
+
+  /* 更小屏幕的响应式调整 */
+  @media (max-width: 768px) {
+    .grid {
+      padding-left: 20px;
+      padding-right: 20px;
+      max-width: 100%;
     }
   }
 </style>
