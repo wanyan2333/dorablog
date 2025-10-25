@@ -7,6 +7,9 @@
   export let data;
   const { article } = data;
   const SIDEBAR_W = 400;
+  
+  console.log('Article page loaded:', article.title);
+  console.log('Current article ID:', article.id);
 </script>
 
 <div class="grid" style={`grid-template-columns:minmax(0,1fr) ${SIDEBAR_W}px;`}>
@@ -19,6 +22,7 @@
       authorName={article.author.name}
       articleId={article.id}
       initialLikeCount={article.likeCount}
+      tags={article.tags}
     />
 
     <CommentsList articleId={article.id} articleAuthorId={article.userId} />
@@ -26,7 +30,7 @@
 
   <aside class="aside">
     <SidebarAuthor name={article.author.name} avatar={article.author.avatar} />
-    <SidebarRecommend />
+    <SidebarRecommend articleId={article.id} />
   </aside>
 </div>
 

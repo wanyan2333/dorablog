@@ -10,6 +10,7 @@
   export let authorName = '';
   export let articleId = null;
   export let initialLikeCount = 0;
+  export let tags = [];
 
   import likeIcon from '../../../assets/images/like-icon.png';
   
@@ -57,6 +58,23 @@
       isLoading = false;
     }
   }
+
+  // Get tag color
+  function getTagColor(colorName) {
+    const colors = {
+      'blue': '#3b82f6',
+      'green': '#10b981', 
+      'orange': '#f59e0b',
+      'purple': '#8b5cf6',
+      'red': '#ef4444',
+      'yellow': '#eab308',
+      'cyan': '#06b6d4',
+      'pink': '#ec4899',
+      'magenta': '#d946ef',
+      'gray': '#6b7280'
+    };
+    return colors[colorName] || colors.gray;
+  }
 </script>
 
 <section class="card">
@@ -74,7 +92,18 @@
   </button>
 
   <h1 class="title">{title}</h1>
-  <p class="meta">By <strong>{authorName}</strong> · {date}</p>
+  <div class="meta-line">
+    <p class="meta">By <strong>{authorName}</strong> · {date}</p>
+    {#if tags && tags.length > 0}
+      <div class="tags">
+        {#each tags as tag}
+          <span class="tag" style="background-color: {getTagColor(tag.color)}">
+            {tag.tag}
+          </span>
+        {/each}
+      </div>
+    {/if}
+  </div>
 
   <article class="body">{@html text}</article>
 
@@ -153,7 +182,7 @@
   }
 
   .like-count {
-    font-size: 0.85rem;
+    font-size: 1.05rem;
     font-weight: 600;
     color: #333;
     transition: color 0.3s ease;
@@ -173,11 +202,37 @@
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
   }
 
-  .meta {
+  .meta-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     margin: 0 4px 12px;
+    flex-wrap: wrap;
+  }
+
+  .meta {
+    margin: 0;
     color: #3b5a96;
     font-size: 0.95rem;
     opacity: 0.9;
+  }
+
+  .tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   .body {

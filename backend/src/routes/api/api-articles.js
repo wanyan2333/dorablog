@@ -1,21 +1,17 @@
 import express from "express";
 import { requiresAuthentication } from "../../middleware/auth-middleware.js";
-import { getAllArticles, getArticleById, getArticlesByUserId, getLikedUsers, searchArticles, toggleArticleLike, createArticle } from "../../data/articles-dao.js";
+import { getAllArticles, getArticleById, getArticlesByUserId, getLikedUsers, searchArticles, toggleArticleLike, createArticle, getRecommendedArticles } from "../../data/articles-dao.js";
 const router = express.Router();
 
 /**
  * Sending a GET request to /api/articles/ will return an array of all articles in the system.
  */
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    getAllArticles().then(async (articles) => {
-      for (let article of articles) {
-        const likedUsers = await getLikedUsers(article.id);
-        article.likeCount = likedUsers.length;
-      }
-      return res.status(200).json(articles);
-    });
-  }catch (error) {
+    const articles = await getAllArticles();
+    return res.status(200).json(articles);
+  } catch (error) {
+    console.error("Error getting articles:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -141,6 +137,27 @@ router.post("/", async (req, res) => {
     
   } catch (error) {
     console.error("Error creating article:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+/**
+ * Sending a GET request to /api/articles/:id/recommendations will return recommended articles for the given article.
+ */
+router.get("/:id/recommendations", async (req, res) => {
+  try {
+    const articleId = parseInt(req.params.id);
+    const limit = parseInt(req.query.limit) || 5;
+    
+    if (isNaN(articleId)) {
+      return res.status(400).json({ message: "Invalid article ID" });
+    }
+    
+    const recommendations = await getRecommendedArticles(articleId, limit);
+    return res.status(200).json(recommendations);
+    
+  } catch (error) {
+    console.error("Error getting recommendations:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 });

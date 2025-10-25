@@ -8,6 +8,8 @@
   // Use article header image as full-page background
   const bg = data.article?.headerImage || '/src/assets/images/fallback-bg.jpg';
   const CONTENT_MAX = 1400;
+  
+  console.log('Layout loaded for article:', data.article?.title);
 </script>
 
 <Navbar />
