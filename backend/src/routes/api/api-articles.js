@@ -37,19 +37,53 @@ router.get("/search", (req, res) => {
   });
 });
 
-/** * Sending a POST request to /api/articles/like/:id will like or unlike the article with the given id for the currently authenticated user.
+/** 
+ * Sending a POST request to /api/articles/like/:id will like or unlike the article with the given id.
+ * Temporarily using hardcoded userId for testing without authentication.
  */
-router.post("/like/:id", requiresAuthentication, (req, res) => {
+router.post("/like/:id", async (req, res) => {
     const articleId = req.params.id;
-    const userId = req.user.id;
+    // TODO: Replace with req.user.id when authentication is enabled
+    const userId = 2; // Hardcoded for testing
+    
     try {
-      toggleArticleLike(articleId, userId).then((result) => {
-        const liked = result.like ? "liked" : "unliked";
-        return res.status(200).json({ message: liked });
+      const result = await toggleArticleLike(articleId, userId);
+      
+      // Get updated like count
+      const article = await getArticleById(articleId);
+      
+      return res.status(200).json({ 
+        liked: result.liked,
+        likeCount: article.likeCount || 0
       });
     } catch (error) {
-        return res.status(500).json({ message: "Internal server error" });
+      console.error("Error toggling like:", error);
+      return res.status(500).json({ message: "Internal server error" });
     }
+});
+
+/**
+ * Sending a GET request to /api/articles/:id/liked will check if the current user has liked the article.
+ * Temporarily using hardcoded userId for testing without authentication.
+ */
+router.get("/:id/liked", async (req, res) => {
+  const articleId = req.params.id;
+  // TODO: Replace with req.user.id when authentication is enabled
+  const userId = 2; // Hardcoded for testing
+  
+  try {
+    const db = await import("../../data/database.js").then(m => m.getDatabase());
+    const result = await db.get(
+      "SELECT 1 FROM ArticleLike WHERE articleId = ? AND userId = ?",
+      articleId,
+      userId
+    );
+    
+    return res.status(200).json({ liked: !!result });
+  } catch (error) {
+    console.error("Error checking like status:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 /**

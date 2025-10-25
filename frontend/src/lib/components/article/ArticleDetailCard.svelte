@@ -1,24 +1,82 @@
 <script>
+  import { onMount } from 'svelte';
   import ImageGrid from './ImageGrid.svelte';
+  import { api } from '../../api.js';
 
   export let title = '';
   export let text = '';
   export let images = [];
   export let date = '';
   export let authorName = '';
+  export let articleId = null;
+  export let initialLikeCount = 0;
 
   import likeIcon from '../../../assets/images/like-icon.png';
+  
+  let liked = false;
+  let likeCount = initialLikeCount;
+  let isLoading = false;
+
+  // Check if user has liked this article on mount
+  onMount(async () => {
+    if (articleId) {
+      try {
+        const response = await fetch(`http://localhost:3000/api/articles/${articleId}/liked`);
+        if (response.ok) {
+          const data = await response.json();
+          liked = data.liked;
+        }
+      } catch (error) {
+        console.error('Error checking like status:', error);
+      }
+    }
+  });
+
+  // Toggle like/unlike
+  async function handleLike() {
+    if (!articleId || isLoading) return;
+    
+    isLoading = true;
+    
+    try {
+      const response = await fetch(`http://localhost:3000/api/articles/like/${articleId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        liked = data.liked;
+        likeCount = data.likeCount;
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    } finally {
+      isLoading = false;
+    }
+  }
 </script>
 
 <section class="card">
-  <button class="like-btn" aria-label="Like">
+  <button 
+    class="like-btn" 
+    class:liked={liked}
+    class:loading={isLoading}
+    on:click={handleLike}
+    disabled={isLoading}
+    aria-label={liked ? 'Unlike' : 'Like'}>
     <img src={likeIcon} alt="like" />
+    {#if likeCount > 0}
+      <span class="like-count">{likeCount}</span>
+    {/if}
   </button>
 
   <h1 class="title">{title}</h1>
   <p class="meta">By <strong>{authorName}</strong> · {date}</p>
 
-  <article class="body">{text}</article>
+  <article class="body">{@html text}</article>
 
   {#if images && images.length}
     <div class="images">
@@ -40,27 +98,69 @@
     position: absolute;
     top: 12px;
     right: 14px;
-    width: 36px;
+    min-width: 36px;
     height: 36px;
+    padding: 0 8px;
     border: 0;
-    border-radius: 50%;
+    border-radius: 18px;
     background: rgba(255, 255, 255, 0.9);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
-    display: grid;
-    place-items: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     cursor: pointer;
-    transition: transform 0.15s ease, filter 0.15s ease;
+    transition: all 0.3s ease;
   }
 
   .like-btn img {
     width: 20px;
     height: 20px;
     display: block;
+    transition: transform 0.3s ease;
   }
 
   .like-btn:hover {
-    transform: translateY(-1px);
-    filter: brightness(1.05);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  }
+
+  .like-btn:hover img {
+    transform: scale(1.1);
+  }
+
+  .like-btn.liked {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  .like-btn.liked img {
+    filter: brightness(0) invert(1);
+    transform: scale(1.2);
+  }
+
+  .like-btn.liked:hover {
+    box-shadow: 0 8px 28px rgba(102, 126, 234, 0.5);
+  }
+
+  .like-btn.loading {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .like-btn:disabled {
+    cursor: not-allowed;
+  }
+
+  .like-count {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #333;
+    transition: color 0.3s ease;
+  }
+
+  .like-btn.liked .like-count {
+    color: #fff;
   }
 
   .title {
@@ -83,8 +183,80 @@
   .body {
     color: #123;
     line-height: 1.8;
-    white-space: pre-wrap;
     margin-bottom: 12px;
+  }
+
+  /* Style for HTML content from TinyMCE */
+  .body :global(p) {
+    margin-bottom: 1em;
+  }
+
+  .body :global(h1),
+  .body :global(h2),
+  .body :global(h3),
+  .body :global(h4),
+  .body :global(h5),
+  .body :global(h6) {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-weight: 700;
+    color: #0f2a66;
+  }
+
+  .body :global(ul),
+  .body :global(ol) {
+    margin-left: 1.5em;
+    margin-bottom: 1em;
+  }
+
+  .body :global(li) {
+    margin-bottom: 0.5em;
+  }
+
+  .body :global(strong) {
+    font-weight: 700;
+  }
+
+  .body :global(em) {
+    font-style: italic;
+  }
+
+  .body :global(a) {
+    color: #667eea;
+    text-decoration: underline;
+  }
+
+  .body :global(a:hover) {
+    color: #764ba2;
+  }
+
+  .body :global(blockquote) {
+    border-left: 4px solid #667eea;
+    padding-left: 1em;
+    margin: 1em 0;
+    font-style: italic;
+    color: #555;
+  }
+
+  .body :global(code) {
+    background: #f5f5f5;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 0.9em;
+  }
+
+  .body :global(pre) {
+    background: #f5f5f5;
+    padding: 1em;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin: 1em 0;
+  }
+
+  .body :global(pre code) {
+    background: none;
+    padding: 0;
   }
 
   .images {
