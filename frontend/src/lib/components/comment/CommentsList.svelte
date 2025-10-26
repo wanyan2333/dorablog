@@ -182,7 +182,7 @@
 
 <style>
   .comments-section {
-    margin-top: 32px;
+    margin-top: 0px; /* 完全移除上边距 */
     padding: 24px;
     background: white;
     opacity: 0.95;

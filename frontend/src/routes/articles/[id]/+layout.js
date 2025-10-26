@@ -1,5 +1,7 @@
 // Load article data from database by ID
 export const load = async ({ params, fetch }) => {
+  console.log('Loading article with ID:', params.id);
+  
   try {
     const response = await fetch(`http://localhost:3000/api/articles/${params.id}`);
     
@@ -8,6 +10,7 @@ export const load = async ({ params, fetch }) => {
     }
     
     const articleData = await response.json();
+    console.log('Article data loaded:', articleData.title);
     
     // Transform database data to match component expectations
     return {
@@ -30,7 +33,10 @@ export const load = async ({ params, fetch }) => {
         },
         
         // Like count
-        likeCount: articleData.likeCount || 0
+        likeCount: articleData.likeCount || 0,
+        
+        // Tags
+        tags: articleData.tags || []
       }
     };
   } catch (error) {
@@ -49,7 +55,8 @@ export const load = async ({ params, fetch }) => {
           name: 'Unknown',
           avatar: '/src/assets/images/avatar-placeholder.jpg'
         },
-        likeCount: 0
+        likeCount: 0,
+        tags: []
       }
     };
   }

@@ -12,11 +12,29 @@ export async function getAllArticles() {
       Articles.*,
       Users.username as author,
       Users.realname as authorRealName,
-      Users.avatarUrl as authorAvatar
+      Users.avatarUrl as authorAvatar,
+      IFNULL(like_stats.likeCount, 0) as likeCount,
+      IFNULL(comment_stats.commentCount, 0) as commentCount
     FROM Articles 
     LEFT JOIN Users ON Articles.userId = Users.id 
+    LEFT JOIN (
+      SELECT articleId, COUNT(*) as likeCount 
+      FROM ArticleLike 
+      GROUP BY articleId
+    ) like_stats ON Articles.id = like_stats.articleId
+    LEFT JOIN (
+      SELECT articleId, COUNT(*) as commentCount 
+      FROM Comments 
+      GROUP BY articleId
+    ) comment_stats ON Articles.id = comment_stats.articleId
     ORDER BY Articles.date DESC
   `);
+  
+  // Ensure commentCount is never null
+  articles.forEach(article => {
+    article.commentCount = article.commentCount || 0;
+  });
+  
   return articles;
 }
 
@@ -58,6 +76,13 @@ export async function getArticleById(articleId) {
     articleId
   );
   article.likeCount = likeCount.count;
+  
+  // Get tags for this article
+  const tags = await db.all(
+    "SELECT tag, color FROM ArticleTag WHERE articleId = ?",
+    articleId
+  );
+  article.tags = tags;
   
   return article;
 }
@@ -196,11 +221,15 @@ export async function createArticle(articleData) {
     throw new Error("Title, content, and userId are required");
   }
   
+  // Get current time in New Zealand timezone
+  const now = new Date();
+  const nzTimeString = now.toLocaleString("sv-SE", {timeZone: "Pacific/Auckland"}).replace('T', ' ');
+  
   // Insert the article
   const result = await db.run(
     `INSERT INTO Articles (title, content, userId, headerUrl, date) 
-     VALUES (?, ?, ?, ?, datetime('now'))`,
-    [title, content, userId, headerUrl || null]
+     VALUES (?, ?, ?, ?, ?)`,
+    [title, content, userId, headerUrl || null, nzTimeString]
   );
   
   const articleId = result.lastID;
@@ -216,6 +245,104 @@ export async function createArticle(articleData) {
   // Return the created article
   const createdArticle = await getArticleById(articleId);
   return createdArticle;
+}
+
+/**
+ * Gets recommended articles for a given article
+ * Recommendation logic: Same Tag → Higher Popularity
+ * @param {number} articleId - The article ID to get recommendations for
+ * @param {number} limit - Maximum number of recommendations (default: 5)
+ * @returns {Array} Array of recommended article objects
+ */
+export async function getRecommendedArticles(articleId, limit = 5) {
+  const db = await getDatabase();
+  
+  // Get current article info
+  const currentArticle = await getArticleById(articleId);
+  if (!currentArticle) {
+    return [];
+  }
+  
+  // Get current article's tags
+  const currentTags = currentArticle.tags.map(tag => tag.tag);
+  
+  let recommendations = [];
+  
+  // Step 1: Same Tag Priority
+  if (currentTags.length > 0) {
+    const sameTagArticles = await db.all(`
+      SELECT DISTINCT a.*, u.username as author, u.realname as authorRealName, u.avatarUrl as authorAvatar,
+             IFNULL(like_stats.likeCount, 0) as likeCount,
+             IFNULL(comment_stats.commentCount, 0) as commentCount,
+             (IFNULL(like_stats.likeCount, 0) * 1.0 + IFNULL(comment_stats.commentCount, 0) * 2.0) as popularityScore
+      FROM Articles a
+      LEFT JOIN Users u ON a.userId = u.id
+      LEFT JOIN ArticleTag at ON a.id = at.articleId
+      LEFT JOIN (
+        SELECT articleId, COUNT(*) as likeCount 
+        FROM ArticleLike 
+        GROUP BY articleId
+      ) like_stats ON a.id = like_stats.articleId
+      LEFT JOIN (
+        SELECT articleId, COUNT(*) as commentCount 
+        FROM Comments 
+        GROUP BY articleId
+      ) comment_stats ON a.id = comment_stats.articleId
+      WHERE a.id != ? 
+        AND at.tag IN (${currentTags.map(() => '?').join(',')})
+      ORDER BY popularityScore DESC, a.date DESC
+    `, [articleId, ...currentTags]);
+    
+    // Ensure commentCount and popularityScore are never null
+    sameTagArticles.forEach(article => {
+      article.commentCount = article.commentCount || 0;
+      article.popularityScore = article.popularityScore || 0;
+    });
+    
+    recommendations = sameTagArticles.slice(0, limit);
+  }
+  
+  // Step 2: Popularity Priority (if still not enough)
+  if (recommendations.length < limit) {
+    const popularArticles = await db.all(`
+      SELECT a.*, u.username as author, u.realname as authorRealName, u.avatarUrl as authorAvatar,
+             IFNULL(like_stats.likeCount, 0) as likeCount,
+             IFNULL(comment_stats.commentCount, 0) as commentCount,
+             (IFNULL(like_stats.likeCount, 0) * 1.0 + IFNULL(comment_stats.commentCount, 0) * 2.0) as popularityScore
+      FROM Articles a
+      LEFT JOIN Users u ON a.userId = u.id
+      LEFT JOIN (
+        SELECT articleId, COUNT(*) as likeCount 
+        FROM ArticleLike 
+        GROUP BY articleId
+      ) like_stats ON a.id = like_stats.articleId
+      LEFT JOIN (
+        SELECT articleId, COUNT(*) as commentCount 
+        FROM Comments 
+        GROUP BY articleId
+      ) comment_stats ON a.id = comment_stats.articleId
+      WHERE a.id != ?
+      ORDER BY popularityScore DESC, a.date DESC
+    `, [articleId]);
+    
+    // Add to recommendations if not already included
+    for (let article of popularArticles) {
+      // Ensure commentCount and popularityScore are never null
+      article.commentCount = article.commentCount || 0;
+      article.popularityScore = article.popularityScore || 0;
+      
+      if (!recommendations.find(rec => rec.id === article.id)) {
+        recommendations.push(article);
+      }
+    }
+  }
+  
+  // Remove duplicates and limit results
+  const uniqueRecommendations = recommendations.filter((article, index, self) => 
+    index === self.findIndex(a => a.id === article.id)
+  );
+  
+  return uniqueRecommendations.slice(0, limit);
 }
 
 /**
