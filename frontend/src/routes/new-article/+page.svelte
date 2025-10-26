@@ -4,7 +4,7 @@
   import { api } from '$lib/api';
   import { userStore } from '$lib/session';
   import Editor from '@tinymce/tinymce-svelte';
-  import Navbar from '$lib/components/Navbar.svelte';
+
   import Footer from '$lib/components/Footer.svelte';
   
   // Form data
@@ -134,7 +134,7 @@
   }
 </script>
 
-<Navbar />
+
 
 <div class="new-article-page">
   <div class="container">
