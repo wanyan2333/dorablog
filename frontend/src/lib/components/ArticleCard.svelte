@@ -1,6 +1,7 @@
 <script>
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
+  import { userStore } from '$lib/session.js'; 
   
   export let article = {
     id: 1,
@@ -13,7 +14,11 @@
     comments: 5
   };
 
+  $: isLoggedIn = $userStore !== null;
+  $: currentUser = $userStore;
+  
   let commentCount = article.comments || 0;
+  let likeCount = article.likes || 0;
 
   // 处理卡片点击跳转到文章详情页
   function handleCardClick() {
@@ -34,6 +39,36 @@
       }
     }
   });
+
+  // 添加点赞处理函数
+  async function handleLikeClick(event) {
+    event.stopPropagation();
+    
+    // 直接使用 isLoggedIn 变量判断是否登录
+    if (!isLoggedIn) {
+      alert('Please log in to like articles');
+      return;
+    }
+    
+    // 如果已登录，执行点赞逻辑
+    try {
+      const response = await fetch(`http://localhost:3000/api/articles/like/${article.id}`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        likeCount = result.likeCount;
+      } else if (response.status === 401) {
+        alert('You need to log in to like articles');
+      } else {
+        console.error('Failed to like article:', response.status);
+      }
+    } catch (error) {
+      console.error('Error liking article:', error);
+    }
+  }
 </script>
 
 <div class="article-card" on:click={handleCardClick} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleCardClick()}>
@@ -52,10 +87,10 @@
     <p class="excerpt">{article.excerpt}</p>
     
     <!-- 互动按钮 - 固定在左下角 -->
-    <div class="interaction-container" on:click|stopPropagation>
-      <span class="like">
+   <div class="interaction-container" on:click|stopPropagation>
+      <span class="like" on:click={handleLikeClick}> <!-- 添加点击处理 -->
         <img src='/src/assets/images/like-icon.png' alt="Like" />
-        {article.likes}
+        {likeCount} <!-- 使用 likeCount 变量 -->
       </span>
       <span class="comment">
         <img src='/src/assets/images/comment.png' alt="Comment" />
@@ -72,7 +107,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   padding: 1rem;
   margin: 1rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
   width: 250px;
   max-width: 100%;
   position: relative;
@@ -80,9 +115,18 @@
   cursor: pointer;
 }
 
+[data-theme="dark"] .article-card {
+  background-color: rgba(26, 32, 44, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
 .article-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .article-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
 }
 
 /* 主图容器 - 填满顶部区域 */
@@ -93,6 +137,11 @@
   border-radius: 12px;
   margin-bottom: 1rem;
   background-color: #d0eaff; /* 淡蓝色背景 */
+  transition: background-color 0.3s ease;
+}
+
+[data-theme="dark"] .main-image-container {
+  background-color: #2d3748; /* 深色背景 */
 }
 
 .main-image {
@@ -115,6 +164,11 @@
   color: #0066cc;
   margin: 0;
   line-height: 1.4;
+  transition: color 0.3s ease;
+}
+
+[data-theme="dark"] .title {
+  color: #63b3ed;
 }
 
 .author-info {
@@ -136,6 +190,11 @@
   color: #0066cc;
   margin: 0;
   font-style: italic;
+  transition: color 0.3s ease;
+}
+
+[data-theme="dark"] .author {
+  color: #63b3ed;
 }
 
 .excerpt {
@@ -152,6 +211,11 @@
   -webkit-line-clamp: 3;
   line-clamp: 3;
   -webkit-box-orient: vertical;
+  transition: color 0.3s ease;
+}
+
+[data-theme="dark"] .excerpt {
+  color: #e2e8f0;
 }
 
 /* 互动按钮容器 - 固定在左下角 */
@@ -164,6 +228,11 @@
   gap: 1rem;
   font-size: 0.9rem;
   color: #0066cc;
+  transition: color 0.3s ease;
+}
+
+[data-theme="dark"] .interaction-container {
+  color: #63b3ed;
 }
 
 .like, .comment {
@@ -171,10 +240,16 @@
   align-items: center;
   gap: 0.3rem;
   cursor: pointer;
+  transition: color 0.3s ease;
 }
 
 .like:hover, .comment:hover {
   color: #003399;
+}
+
+[data-theme="dark"] .like:hover, 
+[data-theme="dark"] .comment:hover {
+  color: #90cdf4;
 }
 
 .like img, .comment img {
