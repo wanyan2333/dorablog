@@ -267,6 +267,7 @@
     align-items: center;
     justify-content: center;
     position: relative;
+    padding: 40px 0;
   }
 
   .overlay {
@@ -280,8 +281,8 @@
   .auth-card {
     position: relative;
     z-index: 1;
-    width: min(460px, 90vw);
-    padding: 40px 30px;
+    width: min(520px, 90vw);
+    padding: 36px 30px 32px;
     border-radius: 20px;
     background: rgba(255,255,255,0.88);
     box-shadow: 0 10px 28px rgba(11,116,216,0.25);
@@ -290,7 +291,7 @@
 
   .card-header {
     position: relative;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
   }
 
   .home-btn {
@@ -327,33 +328,85 @@
 
   .input-group {
     position: relative;
-    margin: 16px 0; /* 增加输入框之间的间隔 */
+    margin: 12px 0;
   }
 
   /* 头像选择器特殊样式 */
   .input-group:has(.avatar-selector) {
-    margin: 24px 0;
-    padding: 20px;
+    margin: 16px 0;
+    padding: 14px;
     background: rgba(255, 255, 255, 0.6);
     border-radius: 16px;
     border: 1px solid rgba(11, 116, 216, 0.1);
     backdrop-filter: blur(10px);
+  }
+  
+  /* 为注册页面的头像选择器添加特殊样式 */
+  .input-group :global(.avatar-selector .avatar-preview) {
+    width: 90px;
+    height: 90px;
+    margin-bottom: 12px;
+  }
+  
+  .input-group :global(.avatar-selector .avatar-controls) {
+    margin-bottom: 8px;
+  }
+  
+  .input-group :global(.avatar-selector .btn-select),
+  .input-group :global(.avatar-selector .btn-clear) {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  
+  .input-group :global(.avatar-selector .avatar-option) {
+    min-height: 65px;
+    padding: 4px;
+  }
+  
+  .input-group :global(.avatar-selector .avatar-option img) {
+    width: 54px;
+    height: 54px;
+  }
+  
+  .input-group :global(.avatar-selector .avatar-grid) {
+    gap: 8px;
+    padding: 4px;
+    margin-bottom: 12px;
+  }
+  
+  .input-group :global(.avatar-selector .avatar-options) {
+    padding: 10px;
+    margin-top: 10px;
+  }
+  
+  .input-group :global(.avatar-selector .avatar-options h4) {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  
+  .input-group :global(.avatar-selector .custom-upload) {
+    padding-top: 10px;
+  }
+  
+  .input-group :global(.avatar-selector .upload-btn) {
+    padding: 7px 14px;
+    font-size: 12px;
   }
 
   .field-label {
     display: block;
     font-size: 12px;
     color: #666;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     font-weight: 500;
   }
 
   /* 状态文本 - 修复遮挡问题 */
   .status-text {
-    margin-top: 6px;
-    font-size: 12px;
+    margin-top: 4px;
+    font-size: 11px;
     font-weight: 500;
-    padding: 4px 8px;
+    padding: 3px 8px;
     border-radius: 4px;
     text-align: center;
   }
@@ -379,8 +432,8 @@
 
   input, textarea {
     width: 100%;
-    margin: 8px 0;
-    padding: 12px;
+    margin: 6px 0;
+    padding: 10px 12px;
     border: 1px solid #bcdfff;
     border-radius: 12px;
     outline: none;
@@ -393,7 +446,7 @@
 
   textarea { 
     resize: vertical; 
-    min-height: 80px; 
+    min-height: 70px; 
   }
 
   input:focus, textarea:focus {
@@ -415,8 +468,8 @@
 
   .btn {
     width: 100%;
-    padding: 12px;
-    margin-top: 12px;
+    padding: 11px;
+    margin-top: 10px;
     border: none;
     border-radius: 12px;
     font-weight: bold;
@@ -435,7 +488,7 @@
 
   .switch {
     display: block;
-    margin-top: 18px;
+    margin-top: 14px;
     color: #0b74d8;
     text-decoration: none;
     font-size: 14px;

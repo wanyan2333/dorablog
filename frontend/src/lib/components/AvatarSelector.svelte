@@ -115,10 +115,10 @@
   }
 
   .avatar-preview {
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
-    border: 4px solid #bcdfff;
+    border: 4px solid #4ecbff;
     overflow: hidden;
     margin: 0 auto 20px;
     display: flex;
@@ -211,10 +211,10 @@
   .avatar-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
+    gap: 12px;
     margin-bottom: 16px;
     max-width: 100%;
-    padding: 4px;
+    padding: 8px;
   }
 
   .avatar-option {
@@ -222,48 +222,49 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 2px;
-    border: 2px solid transparent;
-    border-radius: 8px;
+    padding: 6px;
+    border: 3px solid transparent;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
-    min-height: 60px;
+    min-height: 80px;
     aspect-ratio: 1;
+    background: rgba(240, 248, 255, 0.5);
   }
 
   .avatar-option:hover {
-    background: #f0f8ff;
-    border-color: #bcdfff;
+    background: rgba(78, 203, 255, 0.2);
+    border-color: #4ecbff;
     transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(11, 116, 216, 0.15);
+    box-shadow: 0 6px 20px rgba(78, 203, 255, 0.25);
   }
 
   .avatar-option.selected {
     border-color: #0b74d8;
-    background: #e7f4ff;
+    background: rgba(11, 116, 216, 0.15);
     transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(11, 116, 216, 0.25);
+    box-shadow: 0 8px 24px rgba(11, 116, 216, 0.35);
   }
 
   .avatar-option img {
-    width: 48px;
-    height: 48px;
+    width: 68px;
+    height: 68px;
     border-radius: 50%;
     object-fit: cover;
     transition: all 0.3s ease;
-    border: 2px solid #e2e8f0;
+    border: 3px solid rgba(78, 203, 255, 0.3);
   }
 
   .avatar-option:hover img {
-    border-color: #bcdfff;
-    transform: scale(1.08);
+    border-color: #4ecbff;
+    transform: scale(1.05);
   }
 
   .avatar-option.selected img {
     border-color: #0b74d8;
-    transform: scale(1.12);
-    box-shadow: 0 4px 12px rgba(11, 116, 216, 0.3);
+    transform: scale(1.08);
+    box-shadow: 0 4px 16px rgba(11, 116, 216, 0.4);
   }
 
   .custom-upload {

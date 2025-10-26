@@ -50,45 +50,64 @@ export async function getUserWithCredentials(username, password) {
 }
 
 /**
- * Schema for "update user". We can optionally supply a username, password, realname, admin, 
- * description, and / or avatarUrl. We cannot edit the id,
+ * Schema for "update user". We can optionally supply a username, password/passwordHash, realname, admin, 
+ * description, birthdate, and / or avatarUrl. We cannot edit the id,
  * or supply any other random data.
  */
 const updateUserSchema = yup
   .object({
     username: yup.string().min(1).optional(),
     password: yup.string().min(5).optional(),
-    realname: yup.string().min(1).optional(),
+    passwordHash: yup.string().optional(),
+    realname: yup.string().optional(),
+    birthdate: yup.string().optional(),
     admin: yup.boolean().optional(),
     description: yup.string().optional(),
-    avatarUrl: yup.string().url().optional()
+    avatarUrl: yup.string().optional()
   })
   .required();
 
 /**
- * Updates the user with the given id if it exists, with the given update data. Update data can optionally include a firstName, lastName,
- * password, and / or blurb.
+ * Updates the user with the given id if it exists, with the given update data. Update data can optionally include a username,
+ * password, realname, admin, description, and / or avatarUrl.
  *
  * Throws an exception if the user with the given id is not found, or the update data is invalid.
  *
  * @param {*} id the user id to update
- * @param {*} udpateData the update data to apply.
+ * @param {*} updateData the update data to apply.
  */
-export function updateUser(id, udpateData) {
-  getUserWithUserId(id).then((users) => {
-    if (!users || users.length === 0) {
-      throw new Error(`User with id ${id} not found`);
-    }
-    const user = users[0];
+export async function updateUser(id, updateData) {
+  const db = await getDatabase();
+  
+  // Check if user exists
+  const user = await getUserWithUserId(id);
+  if (!user) {
+    throw new Error(`User with id ${id} not found`);
+  }
 
-    // Validate incoming data (throw error if invalid)
-    const parsedUpdateData = updateUserSchema.validateSync(udpateData, {
-      abortEarly: false,
-      stripUnknown: true
-    });
-    // Do the update
-    Object.assign(user, parsedUpdateData);
+  // Validate incoming data (throw error if invalid)
+  const parsedUpdateData = updateUserSchema.validateSync(updateData, {
+    abortEarly: false,
+    stripUnknown: true
   });
+
+  // Build update query dynamically
+  const fields = Object.keys(parsedUpdateData);
+  if (fields.length === 0) {
+    return user; // Nothing to update
+  }
+
+  const setClause = fields.map(field => `${field} = ?`).join(', ');
+  const values = fields.map(field => parsedUpdateData[field]);
+  values.push(id); // Add id for WHERE clause
+
+  await db.run(
+    `UPDATE Users SET ${setClause} WHERE id = ?`,
+    ...values
+  );
+
+  // Return updated user
+  return await getUserWithUserId(id);
 }
 
 export async function createUser(userData) {
@@ -99,4 +118,23 @@ export async function createUser(userData) {
     "INSERT INTO Users (username, password, realname, admin, description, avatarUrl) VALUES (?, ?, ?, ?, ?, ?)", 
     username, password, realname, admin, description, avatarUrl);
   return user;
+}
+
+/**
+ * Deletes the user with the given id, along with all their articles and comments (CASCADE).
+ *
+ * @param {number} id the user id to delete
+ * @returns {Promise<void>}
+ */
+export async function deleteUser(id) {
+  const db = await getDatabase();
+  
+  // Check if user exists
+  const user = await getUserWithUserId(id);
+  if (!user) {
+    throw new Error(`User with id ${id} not found`);
+  }
+
+  // Delete user (CASCADE will automatically delete articles, comments, likes, etc.)
+  await db.run("DELETE FROM Users WHERE id = ?", id);
 }
