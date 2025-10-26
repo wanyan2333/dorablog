@@ -321,18 +321,15 @@ INSERT INTO ArticleLike (articleId, userId) VALUES
     (10, 9),
     (10, 10);
 
--- Dummy article-tag relations
+-- Dummy article-tag relations (简化标签系统，5-6个主要标签)
 INSERT INTO ArticleTag (articleId, tag, color) VALUES
-    (1, 'Tech', 'blue'),
-    (1, 'News', 'red'),
-    (2, 'Health', 'green'),
-    (3, 'Lifestyle', 'purple'),
+    (1, 'Technology', 'blue'),
+    (2, 'Lifestyle', 'green'),
+    (3, 'Health', 'red'),
     (4, 'Travel', 'orange'),
-    (5, 'Food', 'yellow'),
-    (6, 'Education', 'pink'),
-    (7, 'Entertainment', 'cyan'),
-    (8, 'Sports', 'magenta'),
-    (9, 'Study', 'brown'),
-    (10, 'Art', 'teal'),
-    (11, 'Photography', 'navy'),
-    (12, 'Vacation', 'lime');
+    (5, 'Technology', 'blue'),
+    (6, 'Technology', 'blue'),
+    (7, 'Lifestyle', 'green'),
+    (8, 'Health', 'red'),
+    (9, 'Health', 'red'),
+    (10, 'Technology', 'blue');

@@ -18,17 +18,13 @@
   let isSubmitting = false;
   let errors = {};
   
-  // Available tags (predefined)
+  // Available tags (predefined) - 简化为5-6个主要标签
   const availableTags = [
     'Technology',
     'Lifestyle', 
     'Travel',
-    'Game',
     'Health',
-    'Food',
-    'Education',
     'Entertainment',
-    'Sports',
     'News'
   ];
   
@@ -123,6 +119,19 @@
     const files = Array.from(event.target.files);
     contentImages = [...contentImages, ...files];
   }
+
+  // Get tag color
+  function getTagColor(tagName) {
+    const colors = {
+      'Technology': '#3b82f6',
+      'Lifestyle': '#10b981', 
+      'Travel': '#f59e0b',
+      'Health': '#ef4444',
+      'Entertainment': '#ec4899',
+      'News': '#6b7280'
+    };
+    return colors[tagName] || colors.News;
+  }
 </script>
 
 <Navbar />
@@ -155,12 +164,22 @@
       <!-- Tag Selection -->
       <div class="form-group">
         <label for="tag">Category *</label>
-        <select id="tag" bind:value={selectedTag} class:error={errors.tag}>
-          <option value="">Select a category...</option>
+        <div class="tag-selector">
           {#each availableTags as tag}
-            <option value={tag}>{tag}</option>
+            <button 
+              type="button"
+              class="tag-option" 
+              class:selected={selectedTag === tag}
+              style="background-color: {getTagColor(tag)}"
+              on:click={() => selectedTag = tag}
+            >
+              {#if selectedTag === tag}
+                <span class="selected-indicator">✓</span>
+              {/if}
+              {tag}
+            </button>
           {/each}
-        </select>
+        </div>
         {#if errors.tag}
           <span class="error-message">{errors.tag}</span>
         {/if}
@@ -310,8 +329,7 @@
     color: #333;
   }
   
-  .form-group input,
-  .form-group select {
+  .form-group input {
     width: 100%;
     padding: 0.7rem;
     border: 2px solid #e8ecf0;
@@ -321,17 +339,75 @@
     background: rgba(255, 255, 255, 0.8);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
+
+  .tag-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 0.5rem;
+  }
+
+  .tag-option {
+    padding: 6px 12px;
+    border: 2px solid transparent;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .tag-option::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  .tag-option:hover::before {
+    left: 100%;
+  }
+
+  .tag-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .tag-option.selected {
+    border: 3px solid #ffffff;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 10;
+  }
+
+
+  .selected-indicator {
+    display: inline-block;
+    margin-right: 4px;
+    font-size: 12px;
+    font-weight: bold;
+  }
   
-  .form-group input:focus,
-  .form-group select:focus {
+  .form-group input:focus {
     outline: none;
     border-color: #667eea;
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     transform: translateY(-1px);
   }
   
-  .form-group input.error,
-  .form-group select.error {
+  .form-group input.error {
     border-color: #e74c3c;
   }
   

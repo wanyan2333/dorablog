@@ -3,7 +3,6 @@ import { requiresAuthentication } from "../../middleware/auth-middleware.js";
 import { getAllArticles, getArticleById, getArticlesByUserId, getLikedUsers, searchArticles, toggleArticleLike, createArticle } from "../../data/articles-dao.js";
 import { getCommentsByArticleId } from "../../data/comments-dao.js";
 
-
 const router = express.Router();
 
 
@@ -12,16 +11,12 @@ const router = express.Router();
 /**
  * Sending a GET request to /api/articles/ will return an array of all articles in the system.
  */
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    getAllArticles().then(async (articles) => {
-      for (let article of articles) {
-        const likedUsers = await getLikedUsers(article.id);
-        article.likeCount = likedUsers.length;
-      }
-      return res.status(200).json(articles);
-    });
-  }catch (error) {
+    const articles = await getAllArticles();
+    return res.status(200).json(articles);
+  } catch (error) {
+    console.error("Error getting articles:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -151,6 +146,9 @@ router.post("/", async (req, res) => {
   }
 });
 
+/**
+ * Sending a GET request to /api/articles/:articleId/comment-count will return the number of comments for the given article.
+ */
 router.get('/:articleId/comment-count', async (req, res) => {
   try {
     const { articleId } = req.params;
