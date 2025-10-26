@@ -12,7 +12,7 @@
   console.log('Layout loaded for article:', data.article?.title);
 </script>
 
-<Navbar />
+
 
 <div class="page-wrap">
   <!-- Background image -->

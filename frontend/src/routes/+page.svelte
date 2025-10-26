@@ -1,7 +1,6 @@
 <!-- src/routes/+page.svelte -->
 <script>
   import { onMount } from 'svelte';
-  import Navbar from '$lib/components/Navbar.svelte';
   import ArticleCard from '$lib/components/ArticleCard.svelte';
   import Footer from '$lib/components/Footer.svelte';
   import { getArticles } from '$lib/api.js';
@@ -44,8 +43,6 @@
     }
   });
 </script>
-
-<Navbar />
 
 <main class="home-main">
   {#if loading}
