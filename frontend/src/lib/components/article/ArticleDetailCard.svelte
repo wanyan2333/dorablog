@@ -13,22 +13,32 @@
   export let tags = [];
 
   import likeIcon from '../../../assets/images/like-icon.png';
+  import commentIcon from '../../../assets/images/comment.png';
   
   let liked = false;
   let likeCount = initialLikeCount;
+  let commentCount = 0;
   let isLoading = false;
 
-  // Check if user has liked this article on mount
+  // Check if user has liked this article on mount and get comment count
   onMount(async () => {
     if (articleId) {
       try {
-        const response = await fetch(`http://localhost:3000/api/articles/${articleId}/liked`);
-        if (response.ok) {
-          const data = await response.json();
-          liked = data.liked;
+        // Check like status
+        const likedResponse = await fetch(`http://localhost:3000/api/articles/${articleId}/liked`);
+        if (likedResponse.ok) {
+          const likedData = await likedResponse.json();
+          liked = likedData.liked;
+        }
+        
+        // Get comment count
+        const commentResponse = await fetch(`http://localhost:3000/api/comments/articles/${articleId}`);
+        if (commentResponse.ok) {
+          const comments = await commentResponse.json();
+          commentCount = comments.length;
         }
       } catch (error) {
-        console.error('Error checking like status:', error);
+        console.error('Error loading article data:', error);
       }
     }
   });
@@ -78,18 +88,29 @@
 </script>
 
 <section class="card">
-  <button 
-    class="like-btn" 
-    class:liked={liked}
-    class:loading={isLoading}
-    on:click={handleLike}
-    disabled={isLoading}
-    aria-label={liked ? 'Unlike' : 'Like'}>
-    <img src={likeIcon} alt="like" />
-    {#if likeCount > 0}
-      <span class="like-count">{likeCount}</span>
-    {/if}
-  </button>
+  <div class="action-buttons">
+    <button 
+      class="like-btn" 
+      class:liked={liked}
+      class:loading={isLoading}
+      on:click={handleLike}
+      disabled={isLoading}
+      aria-label={liked ? 'Unlike' : 'Like'}>
+      <img src={likeIcon} alt="like" />
+      {#if likeCount > 0}
+        <span class="like-count">{likeCount}</span>
+      {/if}
+    </button>
+    
+    <button 
+      class="comment-btn"
+      aria-label="Comments">
+      <img src={commentIcon} alt="comment" />
+      {#if commentCount > 0}
+        <span class="comment-count">{commentCount}</span>
+      {/if}
+    </button>
+  </div>
 
   <h1 class="title">{title}</h1>
   <div class="meta-line">
@@ -123,10 +144,15 @@
     padding: 16px 18px 18px;
   }
 
-  .like-btn {
+  .action-buttons {
     position: absolute;
     top: 12px;
     right: 14px;
+    display: flex;
+    gap: 8px;
+  }
+
+  .like-btn, .comment-btn {
     min-width: 36px;
     height: 36px;
     padding: 0 8px;
@@ -142,19 +168,19 @@
     transition: all 0.3s ease;
   }
 
-  .like-btn img {
+  .like-btn img, .comment-btn img {
     width: 20px;
     height: 20px;
     display: block;
     transition: transform 0.3s ease;
   }
 
-  .like-btn:hover {
+  .like-btn:hover, .comment-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
   }
 
-  .like-btn:hover img {
+  .like-btn:hover img, .comment-btn:hover img {
     transform: scale(1.1);
   }
 
@@ -181,7 +207,7 @@
     cursor: not-allowed;
   }
 
-  .like-count {
+  .like-count, .comment-count {
     font-size: 1.05rem;
     font-weight: 600;
     color: #333;
@@ -194,7 +220,7 @@
 
   .title {
     margin: 0.25rem 4px 0.4rem;
-    padding-right: 48px;
+    padding-right: 100px;
     line-height: 1.2;
     color: #0f2a66;
     font-weight: 800;

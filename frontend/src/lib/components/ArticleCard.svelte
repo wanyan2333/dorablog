@@ -1,4 +1,7 @@
 <script>
+  import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
+  
   export let article = {
     id: 1,
     avatar: '/images/doraemon1.png',
@@ -9,9 +12,31 @@
     likes: 86,
     comments: 5
   };
+
+  let commentCount = article.comments || 0;
+
+  // 处理卡片点击跳转到文章详情页
+  function handleCardClick() {
+    goto(`/articles/${article.id}`);
+  }
+
+  // 获取评论数
+  onMount(async () => {
+    if (article.id) {
+      try {
+        const response = await fetch(`http://localhost:3000/api/comments/articles/${article.id}`);
+        if (response.ok) {
+          const comments = await response.json();
+          commentCount = comments.length;
+        }
+      } catch (error) {
+        console.error('Error loading comment count:', error);
+      }
+    }
+  });
 </script>
 
-<div class="article-card">
+<div class="article-card" on:click={handleCardClick} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleCardClick()}>
   <!-- 主图 - 填满顶部区域 -->
   <div class="main-image-container">
     <img src={article.avatar} alt={article.title} class="main-image" />
@@ -26,11 +51,15 @@
     </div>
     <p class="excerpt">{article.excerpt}</p>
     
-    <!-- 点赞按钮 - 固定在左下角 -->
-    <div class="like-container">
+    <!-- 互动按钮 - 固定在左下角 -->
+    <div class="interaction-container" on:click|stopPropagation>
       <span class="like">
         <img src='/src/assets/images/like-icon.png' alt="Like" />
         {article.likes}
+      </span>
+      <span class="comment">
+        <img src='/src/assets/images/comment.png' alt="Comment" />
+        {commentCount}
       </span>
     </div>
   </div>
@@ -48,6 +77,7 @@
   max-width: 100%;
   position: relative;
   min-height: 400px; /* 拉长卡片 */
+  cursor: pointer;
 }
 
 .article-card:hover {
@@ -124,29 +154,30 @@
   -webkit-box-orient: vertical;
 }
 
-/* 点赞容器 - 固定在左下角 */
-.like-container {
+/* 互动按钮容器 - 固定在左下角 */
+.interaction-container {
   position: absolute;
   bottom: 1rem;
   left: 1rem;
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 1rem;
   font-size: 0.9rem;
   color: #0066cc;
 }
 
-.like {
+.like, .comment {
   display: flex;
   align-items: center;
   gap: 0.3rem;
   cursor: pointer;
 }
 
-.like:hover {
+.like:hover, .comment:hover {
   color: #003399;
 }
-.like img {
+
+.like img, .comment img {
   width: 20px;
   height: 20px;
 } 
