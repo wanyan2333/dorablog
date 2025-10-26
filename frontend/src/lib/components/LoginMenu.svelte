@@ -12,6 +12,11 @@
   onMount(() => loadMe());
 
   function gotoLogin() { window.location.href = '/login'; }
+  
+  function gotoProfile() {
+    window.location.href = '/profile';
+    open = false;
+  }
 
   async function logout() {
     await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/logout`, {
@@ -20,6 +25,8 @@
     });
     await loadMe();
     open = false;
+    // Redirect to home page after logout
+    window.location.href = '/';
   }
 </script>
 
@@ -61,6 +68,7 @@
 
       {#if open}
         <div class="dropdown" role="menu">
+          <button class="item" on:click={gotoProfile}>👤 My Profile</button>
           <button class="item" on:click={logout}>🚪 Logout</button>
         </div>
       {/if}
