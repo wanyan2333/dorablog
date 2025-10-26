@@ -52,7 +52,7 @@ export async function getArticleById(articleId) {
   );
   article.images = images.map(img => img.imgUrl);
   
-  // Get like count
+  // Get like count 点赞数量统计
   const likeCount = await db.get(
     "SELECT COUNT(*) as count FROM ArticleLike WHERE articleId = ?",
     articleId

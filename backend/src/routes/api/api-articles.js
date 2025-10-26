@@ -1,7 +1,13 @@
 import express from "express";
 import { requiresAuthentication } from "../../middleware/auth-middleware.js";
 import { getAllArticles, getArticleById, getArticlesByUserId, getLikedUsers, searchArticles, toggleArticleLike, createArticle } from "../../data/articles-dao.js";
+import { getCommentsByArticleId } from "../../data/comments-dao.js";
+
+
 const router = express.Router();
+
+
+
 
 /**
  * Sending a GET request to /api/articles/ will return an array of all articles in the system.
@@ -142,6 +148,23 @@ router.post("/", async (req, res) => {
   } catch (error) {
     console.error("Error creating article:", error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.get('/:articleId/comment-count', async (req, res) => {
+  try {
+    const { articleId } = req.params;
+    // 确保 articleId 是数字
+    const id = parseInt(articleId);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'Invalid article ID' });
+    }
+    
+    const comments = await getCommentsByArticleId(id);
+    res.json({ count: comments.length });
+  } catch (error) {
+    console.error('获取评论数失败:', error);
+    res.status(500).json({ error: '获取评论数失败' });
   }
 });
 

@@ -36,3 +36,8 @@ export async function getArticles() {
 export async function getArticleById(id) {
   return await api(`/api/articles/${id}`);
 }
+
+// 获取文章的评论数量
+export async function getArticleCommentCount(articleId) {
+  return await api(`/api/articles/${articleId}/comment-count`);
+}
