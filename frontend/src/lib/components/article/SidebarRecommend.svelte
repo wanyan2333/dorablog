@@ -91,6 +91,23 @@
       article.isLoading = false;
     }
   }
+
+  // Get tag color (same as ArticleDetailCard)
+  function getTagColor(colorName) {
+    const colors = {
+      'blue': '#3b82f6',
+      'green': '#10b981', 
+      'orange': '#f59e0b',
+      'purple': '#8b5cf6',
+      'red': '#ef4444',
+      'yellow': '#eab308',
+      'cyan': '#06b6d4',
+      'pink': '#ec4899',
+      'magenta': '#d946ef',
+      'gray': '#6b7280'
+    };
+    return colors[colorName] || colors.gray;
+  }
 </script>
 
 <section class="card">
@@ -128,8 +145,19 @@
           </div>
           <div class="article-content">
             <h4 class="article-title">{article.title}</h4>
-            <p class="article-author">By {article.authorRealName || article.author}</p>
-            <div class="article-meta">
+            <div class="article-meta-line">
+              <p class="article-author">By {article.authorRealName || article.author}</p>
+              {#if article.tags && article.tags.length > 0}
+                <div class="article-tags">
+                  {#each article.tags as tag}
+                    <span class="article-tag" style="background-color: {getTagColor(tag.color)}">
+                      {tag.tag}
+                    </span>
+                  {/each}
+                </div>
+              {/if}
+            </div>
+            <div class="article-actions">
               <button 
                 class="like-btn" 
                 class:liked={article.liked}
@@ -268,11 +296,6 @@
     margin: 0 0 4px 0;
   }
 
-  .article-meta {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
 
   .like-btn {
     min-width: 24px;
@@ -338,5 +361,45 @@
 
   .like-btn.liked .like-count {
     color: #fff;
+  }
+
+  /* Article meta line styles */
+  .article-meta-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+
+  .article-author {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #666;
+    font-weight: 500;
+  }
+
+  .article-tags {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .article-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .article-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 </style>

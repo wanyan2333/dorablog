@@ -21,7 +21,7 @@ export const load = async ({ params, fetch }) => {
         date: articleData.date,
         
         // Header image (used as page background)
-        headerImage: articleData.headerUrl || '/src/assets/images/fallback-bg.jpg',
+        headerImage: articleData.headerUrl || '/src/assets/images/Background.png',
         
         // Content images
         images: articleData.images || [],
@@ -49,7 +49,7 @@ export const load = async ({ params, fetch }) => {
         title: 'Article not found',
         content: 'Sorry, we could not load this article.',
         date: new Date().toISOString(),
-        headerImage: '/src/assets/images/fallback-bg.jpg',
+        headerImage: '/src/assets/images/Background.png',
         images: [],
         author: {
           name: 'Unknown',
