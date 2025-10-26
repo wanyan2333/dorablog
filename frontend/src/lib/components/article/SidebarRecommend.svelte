@@ -392,10 +392,12 @@
     display: flex;
     gap: 4px;
     flex-wrap: wrap;
+    align-items: center; /* 与作者名字垂直居中对齐 */
   }
 
   .article-tag {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     padding: 2px 6px;
     border-radius: 8px;
     font-size: 0.6rem;
@@ -404,6 +406,8 @@
     text-transform: uppercase;
     letter-spacing: 0.3px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    line-height: 1;
+    vertical-align: middle; /* 垂直居中对齐 */
   }
 
   .article-actions {
