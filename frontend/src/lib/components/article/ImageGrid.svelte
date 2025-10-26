@@ -1,13 +1,22 @@
 <script>
   export let images = [];
   const items = images || [];
+  
+  // 处理图片URL，如果是相对路径则添加服务器地址
+  function getImageUrl(src) {
+    if (!src) return '';
+    if (src.startsWith('http://') || src.startsWith('https://')) {
+      return src;
+    }
+    return `http://localhost:3000${src}`;
+  }
 </script>
 
 <div class="grid-wrap">
   <div class="grid">
     {#each items as src, i}
       <figure class="cell" aria-label={`image-${i + 1}`}>
-        <img src={src} alt={`image-${i + 1}`} loading="lazy" />
+        <img src={getImageUrl(src)} alt={`image-${i + 1}`} loading="lazy" />
       </figure>
     {/each}
   </div>

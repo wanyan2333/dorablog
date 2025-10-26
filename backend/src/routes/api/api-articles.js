@@ -1,7 +1,43 @@
 import express from "express";
 import { requiresAuthentication } from "../../middleware/auth-middleware.js";
 import { getAllArticles, getArticleById, getArticlesByUserId, getLikedUsers, searchArticles, toggleArticleLike, createArticle, getRecommendedArticles } from "../../data/articles-dao.js";
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 const router = express.Router();
+
+// 配置multer用于文章图片上传
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'articles');
+    // 确保上传目录存在
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // 生成唯一文件名：时间戳 + 随机数 + 原扩展名
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, 'article-' + uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB限制
+  },
+  fileFilter: function (req, file, cb) {
+    // 只允许图片文件
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'), false);
+    }
+  }
+});
 
 /**
  * Sending a GET request to /api/articles/ will return an array of all articles in the system.
@@ -114,8 +150,8 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ message: "Title must be less than 200 characters" });
     }
     
-    if (content.length > 10000) {
-      return res.status(400).json({ message: "Content must be less than 10,000 characters" });
+    if (content.length > 100000) {
+      return res.status(400).json({ message: "Content must be less than 100,000 characters" });
     }
     
     // Create article data (使用默认用户ID进行测试)
@@ -124,8 +160,11 @@ router.post("/", async (req, res) => {
       content: content.trim(),
       userId: 2, // 使用默认用户ID (johndoe)
       headerUrl: headerImage || null,
-      tag: tag || null
+      tag: tag || null,
+      contentImages: contentImages || [] // 传递图片URL数组
     };
+    
+    console.log('Creating article with images:', contentImages);
     
     // Create the article
     const createdArticle = await createArticle(articleData);
@@ -159,6 +198,31 @@ router.get("/:id/recommendations", async (req, res) => {
   } catch (error) {
     console.error("Error getting recommendations:", error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// 文章图片上传端点（支持TinyMCE格式）
+router.post("/upload-image", upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    // 返回图片URL
+    const imageUrl = `/uploads/articles/${req.file.filename}`;
+    
+    console.log('Article image uploaded:', req.file.filename);
+    
+    // 同时支持TinyMCE格式（location）和自定义格式（success + imageUrl）
+    res.json({ 
+      location: imageUrl,  // TinyMCE官方格式
+      success: true,       // 自定义格式
+      imageUrl: imageUrl,
+      filename: req.file.filename 
+    });
+  } catch (error) {
+    console.error('Article image upload error:', error);
+    res.status(500).json({ error: "Failed to upload image" });
   }
 });
 

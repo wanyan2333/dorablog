@@ -108,6 +108,15 @@
     };
     return colors[colorName] || colors.gray;
   }
+
+  // Get full image URL
+  function getImageUrl(url) {
+    if (!url) return '/src/assets/images/article/header.png'; // 默认头图
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return `http://localhost:3000${url}`;
+  }
 </script>
 
 <section class="card">
@@ -138,7 +147,7 @@
         >
           <div class="article-image">
             <img 
-              src={article.headerUrl || '/src/assets/images/doraemon1.png'} 
+              src={getImageUrl(article.headerUrl)} 
               alt={article.title}
               loading="lazy"
             />

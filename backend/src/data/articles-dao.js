@@ -215,7 +215,7 @@ export async function toggleArticleLike(articleId, userId) {
  */
 export async function createArticle(articleData) {
   const db = await getDatabase();
-  const { title, content, userId, headerUrl, tag } = articleData;
+  const { title, content, userId, headerUrl, tag, contentImages } = articleData;
   
   if (!title || !content || !userId) {
     throw new Error("Title, content, and userId are required");
@@ -240,6 +240,24 @@ export async function createArticle(articleData) {
       "INSERT INTO ArticleTag (articleId, tag, color) VALUES (?, ?, ?)",
       [articleId, tag, getTagColor(tag)]
     );
+  }
+  
+  // Add content images if provided
+  console.log('contentImages received:', contentImages);
+  console.log('contentImages type:', typeof contentImages);
+  console.log('contentImages is array:', Array.isArray(contentImages));
+  
+  if (contentImages && contentImages.length > 0) {
+    console.log('Saving content images:', contentImages);
+    for (const imageUrl of contentImages) {
+      console.log('Inserting image URL:', imageUrl);
+      await db.run(
+        "INSERT INTO ArticleImg (articleId, imgUrl) VALUES (?, ?)",
+        [articleId, imageUrl]
+      );
+    }
+  } else {
+    console.log('No content images to save');
   }
   
   // Return the created article
