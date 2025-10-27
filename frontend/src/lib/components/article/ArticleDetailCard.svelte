@@ -31,10 +31,17 @@
   $: displayText = (() => {
     if (!text) return '';
     let cleaned = text.trim();
-    // 移除末尾的所有空段落和空标签
-    cleaned = cleaned.replace(/(<p><br><\/p>\s*)+$/gi, '');
-    cleaned = cleaned.replace(/(<p>\s*<\/p>\s*)+$/gi, '');
-    cleaned = cleaned.replace(/(<br\s*\/?>\s*)+$/gi, '');
+    // 使用循环持续清理末尾的空白
+    let previousText = '';
+    while (previousText !== cleaned) {
+      previousText = cleaned;
+      cleaned = cleaned.replace(/(<p><br\s*\/?><\/p>\s*)+$/gi, '');
+      cleaned = cleaned.replace(/(<p>&nbsp;<\/p>\s*)+$/gi, '');
+      cleaned = cleaned.replace(/(<p>(&nbsp;|\s)+<\/p>\s*)+$/gi, '');
+      cleaned = cleaned.replace(/(<p>\s*<\/p>\s*)+$/gi, '');
+      cleaned = cleaned.replace(/(<br\s*\/?>\s*)+$/gi, '');
+      cleaned = cleaned.replace(/(&nbsp;\s*)+$/gi, '');
+    }
     return cleaned;
   })();
 
@@ -289,10 +296,17 @@
     // 清理文本内容：移除末尾所有空段落和空白，确保图片紧贴在文字后面
     let cleanText = text.trim();
     
-    // 移除末尾的所有空段落（<p><br></p>）和空的<p></p>标签
-    cleanText = cleanText.replace(/(<p><br><\/p>\s*)+$/gi, '');
-    cleanText = cleanText.replace(/(<p>\s*<\/p>\s*)+$/gi, '');
-    cleanText = cleanText.replace(/(<br\s*\/?>\s*)+$/gi, '');
+    // 使用循环持续清理末尾的空白
+    let previousText = '';
+    while (previousText !== cleanText) {
+      previousText = cleanText;
+      cleanText = cleanText.replace(/(<p><br\s*\/?><\/p>\s*)+$/gi, '');
+      cleanText = cleanText.replace(/(<p>&nbsp;<\/p>\s*)+$/gi, '');
+      cleanText = cleanText.replace(/(<p>(&nbsp;|\s)+<\/p>\s*)+$/gi, '');
+      cleanText = cleanText.replace(/(<p>\s*<\/p>\s*)+$/gi, '');
+      cleanText = cleanText.replace(/(<br\s*\/?>\s*)+$/gi, '');
+      cleanText = cleanText.replace(/(&nbsp;\s*)+$/gi, '');
+    }
     
     // 将文本内容和图片组合到编辑器中
     let contentWithImages = cleanText;
@@ -353,13 +367,24 @@
       
       let contentWithoutImages = tempDiv.innerHTML.trim();
       
-      // 移除末尾的所有空段落、空标签和换行，确保文字和图片之间没有任何空白
-      contentWithoutImages = contentWithoutImages.replace(/(<p><br><\/p>\s*)+$/gi, '');
-      contentWithoutImages = contentWithoutImages.replace(/(<p>\s*<\/p>\s*)+$/gi, '');
-      contentWithoutImages = contentWithoutImages.replace(/(<br\s*\/?>\s*)+$/gi, '');
+      console.log('Before cleaning:', contentWithoutImages);
       
-      console.log('Saving article:');
-      console.log('Content (without images):', contentWithoutImages);
+      // 使用循环持续清理末尾的空白，直到没有变化为止
+      let previousContent = '';
+      while (previousContent !== contentWithoutImages) {
+        previousContent = contentWithoutImages;
+        // 移除末尾的所有空段落、空标签和换行
+        contentWithoutImages = contentWithoutImages.replace(/(<p><br\s*\/?><\/p>\s*)+$/gi, '');
+        contentWithoutImages = contentWithoutImages.replace(/(<p>&nbsp;<\/p>\s*)+$/gi, '');  // 清理 <p>&nbsp;</p>
+        contentWithoutImages = contentWithoutImages.replace(/(<p>(&nbsp;|\s)+<\/p>\s*)+$/gi, ''); // 清理包含 &nbsp; 或空格的 <p>
+        contentWithoutImages = contentWithoutImages.replace(/<p><\/p>\s*$/gi, '');
+        contentWithoutImages = contentWithoutImages.replace(/<p>\s+<\/p>\s*$/gi, '');
+        contentWithoutImages = contentWithoutImages.replace(/<br\s*\/?>\s*$/gi, '');
+        contentWithoutImages = contentWithoutImages.replace(/&nbsp;\s*$/gi, '');
+        contentWithoutImages = contentWithoutImages.replace(/\s+$/g, '');
+      }
+      
+      console.log('After cleaning:', contentWithoutImages);
       console.log('Image URLs:', imageUrls);
       
       // 调用后端API更新文章
