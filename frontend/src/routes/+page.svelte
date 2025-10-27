@@ -18,15 +18,23 @@
       // 按点赞数量从大到小排序，然后取前4篇
       const sortedArticles = articles.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
       homepageArticles = sortedArticles.slice(0, 4).map(article => {
-        // 直接使用数据库中的本地图片路径
-        const articleImage = article.headerUrl || '/src/assets/images/doraemon1.png';
+        // 处理图片URL，如果是相对路径则添加服务器地址
+        const getImageUrl = (url) => {
+          if (!url) return '/src/assets/images/article/header.png'; // 默认头图
+          if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+          }
+          return `http://localhost:3000${url}`;
+        };
+        
+        const articleImage = getImageUrl(article.headerUrl);
         
         console.log('文章:', article.title);
         console.log('使用图片:', articleImage);
         
         return {
           id: article.id,
-          avatar: articleImage, // 直接使用数据库中的本地路径
+          avatar: articleImage,
           title: article.title,
           author: article.authorRealName || article.author, // 优先使用真实姓名
           authorAvatar: article.authorAvatar || '/src/assets/images/avatar-placeholder.png', // 直接使用数据库中的头像路径

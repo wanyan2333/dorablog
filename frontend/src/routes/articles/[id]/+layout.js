@@ -12,6 +12,15 @@ export const load = async ({ params, fetch }) => {
     const articleData = await response.json();
     console.log('Article data loaded:', articleData.title);
     
+    // Helper function to get full image URL
+    const getImageUrl = (url) => {
+      if (!url) return '/src/assets/images/article/header.png'; // 默认头图
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+      }
+      return `http://localhost:3000${url}`;
+    };
+    
     // Transform database data to match component expectations
     return {
       article: {
@@ -21,7 +30,7 @@ export const load = async ({ params, fetch }) => {
         date: articleData.date,
         
         // Header image (used as page background)
-        headerImage: articleData.headerUrl || '/src/assets/images/fallback-bg.jpg',
+        headerImage: getImageUrl(articleData.headerUrl),
         
         // Content images
         images: articleData.images || [],
@@ -49,7 +58,7 @@ export const load = async ({ params, fetch }) => {
         title: 'Article not found',
         content: 'Sorry, we could not load this article.',
         date: new Date().toISOString(),
-        headerImage: '/src/assets/images/fallback-bg.jpg',
+        headerImage: '/src/assets/images/article/header.png', // 默认头图
         images: [],
         author: {
           name: 'Unknown',

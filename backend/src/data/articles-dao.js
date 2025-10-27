@@ -215,7 +215,7 @@ export async function toggleArticleLike(articleId, userId) {
  */
 export async function createArticle(articleData) {
   const db = await getDatabase();
-  const { title, content, userId, headerUrl, tag } = articleData;
+  const { title, content, userId, headerUrl, tag, contentImages } = articleData;
   
   if (!title || !content || !userId) {
     throw new Error("Title, content, and userId are required");
@@ -242,6 +242,24 @@ export async function createArticle(articleData) {
     );
   }
   
+  // Add content images if provided
+  console.log('contentImages received:', contentImages);
+  console.log('contentImages type:', typeof contentImages);
+  console.log('contentImages is array:', Array.isArray(contentImages));
+  
+  if (contentImages && contentImages.length > 0) {
+    console.log('Saving content images:', contentImages);
+    for (const imageUrl of contentImages) {
+      console.log('Inserting image URL:', imageUrl);
+      await db.run(
+        "INSERT INTO ArticleImg (articleId, imgUrl) VALUES (?, ?)",
+        [articleId, imageUrl]
+      );
+    }
+  } else {
+    console.log('No content images to save');
+  }
+  
   // Return the created article
   const createdArticle = await getArticleById(articleId);
   return createdArticle;
@@ -249,7 +267,7 @@ export async function createArticle(articleData) {
 
 /**
  * Gets recommended articles for a given article
- * Recommendation logic: Same Tag → Higher Popularity
+ * Recommendation logic: Same Tag (by latest date) → Higher Popularity
  * @param {number} articleId - The article ID to get recommendations for
  * @param {number} limit - Maximum number of recommendations (default: 5)
  * @returns {Array} Array of recommended article objects
@@ -268,7 +286,7 @@ export async function getRecommendedArticles(articleId, limit = 5) {
   
   let recommendations = [];
   
-  // Step 1: Same Tag Priority
+  // Step 1: Same Tag Priority (sorted by latest date)
   if (currentTags.length > 0) {
     const sameTagArticles = await db.all(`
       SELECT DISTINCT a.*, u.username as author, u.realname as authorRealName, u.avatarUrl as authorAvatar,
@@ -290,7 +308,7 @@ export async function getRecommendedArticles(articleId, limit = 5) {
       ) comment_stats ON a.id = comment_stats.articleId
       WHERE a.id != ? 
         AND at.tag IN (${currentTags.map(() => '?').join(',')})
-      ORDER BY popularityScore DESC, a.date DESC
+      ORDER BY a.date DESC
     `, [articleId, ...currentTags]);
     
     // Ensure commentCount and popularityScore are never null
@@ -341,6 +359,15 @@ export async function getRecommendedArticles(articleId, limit = 5) {
   const uniqueRecommendations = recommendations.filter((article, index, self) => 
     index === self.findIndex(a => a.id === article.id)
   );
+  
+  // Add tags to each recommendation
+  for (let article of uniqueRecommendations) {
+    const tags = await db.all(
+      "SELECT tag, color FROM ArticleTag WHERE articleId = ?",
+      article.id
+    );
+    article.tags = tags;
+  }
   
   return uniqueRecommendations.slice(0, limit);
 }

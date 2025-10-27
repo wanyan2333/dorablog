@@ -12,6 +12,7 @@
   let content = '';
   let selectedTag = '';
   let headerImage = null;
+  let uploadedImages = []; // 存储上传的图片URL
   let contentImages = [];
   
   // Form state
@@ -30,13 +31,207 @@
   
   // TinyMCE configuration
   const editorConfig = {
-    height: 300,
-    menubar: false,
-    plugins: 'lists link image anchor autolink charmap codesample emoticons media searchreplace table visualblocks wordcount',
-    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link media table | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+    height: 400,
+    menubar: 'file edit view insert format',
+    plugins: 'image lists link anchor autolink charmap codesample emoticons media searchreplace table visualblocks wordcount',
+    toolbar: 'undo redo | blocks | bold italic | image link | alignleft aligncenter alignright | bullist numlist | removeformat',
     content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; }',
+    
+    // 使用CSS隐藏不需要的对话框字段
+    content_css: false,
     branding: false,
-    promotion: false
+    promotion: false,
+    
+    // 图片上传配置 - 使用handler直接处理上传
+    images_upload_handler: async (blobInfo, progress) => {
+      return new Promise(async (resolve, reject) => {
+        try {
+          // 1. 检查图片数量限制（最多9张）
+          if (uploadedImages.length >= 9) {
+            reject('Maximum 9 images allowed. Please remove some images before uploading more.');
+            return;
+          }
+          
+          // 2. 验证文件类型
+          const file = blobInfo.blob();
+          if (!file.type.startsWith('image/')) {
+            reject('Please select an image file');
+            return;
+          }
+          
+          // 3. 验证文件大小（最大10MB）
+          if (file.size > 10 * 1024 * 1024) {
+            reject('File size must be less than 10MB');
+            return;
+          }
+          
+          // 4. 验证文件扩展名
+          const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+          const fileName = blobInfo.filename().toLowerCase();
+          const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+          if (!allowedExtensions.includes(fileExtension)) {
+            reject('Only JPG, PNG, GIF, and WebP images are allowed');
+            return;
+          }
+          
+          // 5. 上传到后端
+          const formData = new FormData();
+          formData.append('image', file, blobInfo.filename());
+          
+          const response = await fetch('http://localhost:3000/api/articles/upload-image', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            const imageUrl = 'http://localhost:3000' + result.imageUrl;
+            // 保存图片URL到数组
+            uploadedImages = [...uploadedImages, result.imageUrl];
+            console.log('Uploaded images:', uploadedImages);
+            resolve(imageUrl);
+          } else {
+            reject('Upload failed: ' + (result.error || 'Unknown error'));
+          }
+        } catch (error) {
+          reject('Upload failed: ' + error.message);
+        }
+      });
+    },
+    
+    // 简化图片对话框配置
+    image_advtab: false,
+    image_title: false,
+    image_description: false,
+    image_dimensions: false,
+    image_caption: false,
+    
+    // 允许拖拽上传
+    paste_data_images: true,
+    
+    // 自定义对话框行为
+    setup: (editor) => {
+      // 监听对话框打开
+      editor.on('OpenWindow', (e) => {
+        setTimeout(() => {
+          const dialog = document.querySelector('.tox-dialog');
+          if (dialog) {
+            // 查找并隐藏Class字段
+            const formGroups = dialog.querySelectorAll('.tox-form__group');
+            formGroups.forEach((group) => {
+              const label = group.querySelector('label');
+              if (label && label.textContent.toLowerCase().includes('class')) {
+                group.style.display = 'none';
+              }
+            });
+            
+            // 查找Upload标签并自动点击
+            const tabs = dialog.querySelectorAll('.tox-dialog__body-nav-item');
+            tabs.forEach((tab) => {
+              const tabText = tab.textContent.toLowerCase();
+              if (tabText.includes('upload')) {
+                tab.click();
+              }
+            });
+          }
+        }, 10);
+      });
+      
+      // 自定义图片插入逻辑
+      editor.on('NodeChange', (e) => {
+        // 查找新插入的图片
+        const images = editor.getBody().querySelectorAll('img:not([data-processed])');
+        images.forEach((img) => {
+          // 标记为已处理
+          img.setAttribute('data-processed', 'true');
+          
+          // 添加缩略图样式类
+          img.classList.add('thumbnail-image');
+          
+          // 检查编辑器内容
+          const body = editor.getBody();
+          const allImages = body.querySelectorAll('img.thumbnail-image');
+          const textContent = editor.getContent({ format: 'text' }).trim();
+          
+          // 如果是第一张图片
+          if (allImages.length === 1) {
+            // 检查是否有文字内容
+            const hasText = textContent && textContent.length > 0;
+            
+            if (!hasText) {
+              // 没有文字，在图片前添加空行
+              const p = editor.getDoc().createElement('p');
+              p.innerHTML = '<br>';
+              body.insertBefore(p, body.firstChild);
+            } else {
+              // 有文字，在文字后面新建一行插入图片
+              const parent = img.parentNode;
+              
+              // 创建一个新的段落来包含图片
+              const imageContainer = editor.getDoc().createElement('p');
+              
+              // 从原父节点移除图片
+              if (parent) {
+                parent.removeChild(img);
+              }
+              
+              // 把图片放入新段落
+              imageContainer.appendChild(img);
+              
+              // 在body末尾添加新段落（文字后面）
+              body.appendChild(imageContainer);
+              
+              // 如果原来的段落现在是空的，删除它
+              if (parent && parent.childNodes.length === 0 && parent.parentNode) {
+                parent.parentNode.removeChild(parent);
+              }
+            }
+            
+            // 设置光标在第一张图片右边
+            setTimeout(() => {
+              const range = editor.getDoc().createRange();
+              const sel = editor.selection.getSel();
+              range.setStartAfter(img);
+              range.setEndAfter(img);
+              sel.removeAllRanges();
+              sel.addRange(range);
+              editor.focus();
+            }, 10);
+          } else {
+            // 不是第一张图片，在光标位置插入（光标应该在上一张图片右边）
+            // 图片会自动插入到光标位置，我们只需要确保它有正确的样式
+            // 然后把光标移到这张图片右边
+            setTimeout(() => {
+              const range = editor.getDoc().createRange();
+              const sel = editor.selection.getSel();
+              range.setStartAfter(img);
+              range.setEndAfter(img);
+              sel.removeAllRanges();
+              sel.addRange(range);
+              editor.focus();
+            }, 10);
+          }
+        });
+      });
+      
+      // 注入CSS样式
+      editor.on('init', () => {
+        const style = editor.getDoc().createElement('style');
+        style.textContent = `
+          .thumbnail-image {
+            width: 150px !important;
+            height: 150px !important;
+            object-fit: cover !important;
+            display: inline-block !important;
+            margin: 5px !important;
+            border-radius: 8px !important;
+            vertical-align: top !important;
+          }
+        `;
+        editor.getDoc().head.appendChild(style);
+      });
+    }
   };
   
   // TinyMCE API key
@@ -51,6 +246,30 @@
   //   }
   // });
   
+  // 图片验证函数
+  function validateImage(file) {
+    const errors = [];
+    
+    // 验证文件类型
+    if (!file.type.startsWith('image/')) {
+      errors.push('Please select an image file');
+    }
+    
+    // 验证文件大小 (最大10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      errors.push('File size must be less than 10MB');
+    }
+    
+    // 验证文件扩展名
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    if (!allowedExtensions.includes(fileExtension)) {
+      errors.push('Only JPG, PNG, GIF, and WebP images are allowed');
+    }
+    
+    return errors;
+  }
+  
   // Form validation
   function validateForm() {
     errors = {};
@@ -63,12 +282,32 @@
     
     if (!content.trim()) {
       errors.content = 'Content is required';
-    } else if (content.length > 10000) {
-      errors.content = 'Content must be less than 10,000 characters';
+    } else if (content.length > 100000) {
+      errors.content = 'Content must be less than 100,000 characters';
     }
     
     if (!selectedTag) {
       errors.tag = 'Please select a tag';
+    }
+    
+    // 验证头图（可选）
+    if (headerImage) {
+      const imageErrors = validateImage(headerImage);
+      if (imageErrors.length > 0) {
+        errors.headerImage = imageErrors.join(', ');
+      }
+    }
+    // 头图是可选的，不上传会使用默认图片
+    
+    // 验证内容图片
+    if (contentImages.length > 0) {
+      for (let i = 0; i < contentImages.length; i++) {
+        const imageErrors = validateImage(contentImages[i]);
+        if (imageErrors.length > 0) {
+          errors.contentImages = `Image ${i + 1}: ${imageErrors.join(', ')}`;
+          break;
+        }
+      }
     }
     
     return Object.keys(errors).length === 0;
@@ -83,20 +322,52 @@
     isSubmitting = true;
     
     try {
+      // 从content中移除所有图片标签，只保留文字
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content.trim();
+      
+      // 移除所有img标签
+      const images = tempDiv.querySelectorAll('img');
+      images.forEach(img => img.remove());
+      
+      // 获取纯文字内容（保留其他HTML标签如p, br等）
+      const contentWithoutImages = tempDiv.innerHTML.trim();
+      
+      // 上传headerImage（如果有）
+      let headerImageUrl = null;
+      if (headerImage) {
+        const formData = new FormData();
+        formData.append('image', headerImage);
+        
+        const uploadResponse = await fetch('http://localhost:3000/api/articles/upload-image', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const uploadResult = await uploadResponse.json();
+        if (uploadResult.success) {
+          headerImageUrl = uploadResult.imageUrl;
+        }
+      }
+      
       const articleData = {
         title: title.trim(),
-        content: content.trim(),
+        content: contentWithoutImages,
         tag: selectedTag,
-        headerImage: headerImage,
-        contentImages: contentImages
+        headerImage: headerImageUrl, // 发送URL而不是File对象
+        contentImages: uploadedImages // 发送图片URL数组
       };
+      
+      console.log('Submitting article:', articleData);
+      console.log('Content images array:', uploadedImages);
+      console.log('Content images count:', uploadedImages.length);
       
       const result = await api('/api/articles', {
         method: 'POST',
         body: JSON.stringify(articleData)
       });
       
-      // 如果到这里说明请求成功
+      // 如果到这里说明请求成功，跳转到文章详情页
       goto(`/articles/${result.article.id}`);
     } catch (error) {
       console.error('API Error:', error);
@@ -106,20 +377,20 @@
     }
   }
   
-  // Handle header image upload (placeholder)
+  // Handle header image upload with validation
   function handleHeaderImageUpload(event) {
     const file = event.target.files[0];
     if (file) {
+      const imageErrors = validateImage(file);
+      if (imageErrors.length > 0) {
+        errors.headerImage = imageErrors.join(', ');
+        return;
+      }
       headerImage = file;
+      errors.headerImage = ''; // 清除错误
     }
   }
   
-  // Handle content image upload (placeholder)
-  function handleContentImageUpload(event) {
-    const files = Array.from(event.target.files);
-    contentImages = [...contentImages, ...files];
-  }
-
   // Get tag color
   function getTagColor(tagName) {
     const colors = {
@@ -185,9 +456,9 @@
         {/if}
       </div>
       
-      <!-- Header Image Upload (Placeholder) -->
+      <!-- Header Image Upload -->
       <div class="form-group">
-        <label for="header-image">Header Image</label>
+        <label for="header-image">Header Image (Optional)</label>
         <div class="image-upload">
           <input
             id="header-image"
@@ -204,50 +475,31 @@
             {/if}
           </label>
         </div>
+        {#if errors.headerImage}
+          <span class="error-message">{errors.headerImage}</span>
+        {/if}
+        {#if headerImage}
+          <div class="image-preview">
+            <img src={URL.createObjectURL(headerImage)} alt="Header preview" />
+          </div>
+        {/if}
       </div>
       
       <!-- Article Content -->
       <div class="form-group">
         <label for="content">Article Content *</label>
+        <p class="helper-text">💡 Tip: Click the image button (🖼️) in the toolbar, or drag & drop images directly into the editor. Maximum 9 images.</p>
         <div class="editor-container" class:error={errors.content}>
           <Editor
             bind:value={content}
-            config={editorConfig}
+            conf={editorConfig}
             apiKey={apiKey}
           />
         </div>
         {#if errors.content}
           <span class="error-message">{errors.content}</span>
         {/if}
-        <div class="char-count">{content.length}/10,000</div>
-      </div>
-      
-      <!-- Content Images Upload (Placeholder) -->
-      <div class="form-group">
-        <label for="content-images">Content Images</label>
-        <div class="image-upload">
-          <input
-            id="content-images"
-            type="file"
-            accept="image/*"
-            multiple
-            on:change={handleContentImageUpload}
-            style="display: none;"
-          />
-          <label for="content-images" class="upload-button">
-            <span>📷 Upload Content Images</span>
-          </label>
-          {#if contentImages.length > 0}
-            <div class="uploaded-images">
-              {#each contentImages as image, index}
-                <span class="image-item">
-                  {image.name}
-                  <button type="button" on:click={() => contentImages = contentImages.filter((_, i) => i !== index)}>×</button>
-                </span>
-              {/each}
-            </div>
-          {/if}
-        </div>
+        <div class="char-count">{content.length}/100,000</div>
       </div>
       
       <!-- Submit Error -->
@@ -327,6 +579,17 @@
     margin-bottom: 0.5rem;
     font-weight: 600;
     color: #333;
+  }
+  
+  .helper-text {
+    font-size: 0.85rem;
+    color: #667eea;
+    margin: -0.25rem 0 0.5rem 0;
+    font-style: italic;
+    background: #f0f4ff;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border-left: 3px solid #667eea;
   }
   
   .form-group input {
@@ -446,6 +709,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
+    max-width: 500px; /* 稍微加长上传框 */
   }
   
   .upload-button {
@@ -465,31 +729,19 @@
     border-color: #667eea;
   }
   
-  .uploaded-images {
+  .image-preview {
+    margin-top: 0.5rem;
+    max-width: 500px; /* 与上传框同宽 */
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
+    justify-content: center; /* 水平居中 */
   }
   
-  .image-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: #f8f9fa;
-    padding: 0.5rem;
-    border-radius: 6px;
-    font-size: 0.875rem;
-  }
-  
-  .image-item button {
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-    font-size: 12px;
+  .image-preview img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover; /* 裁剪为方形 */
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
   
   .submit-error {
