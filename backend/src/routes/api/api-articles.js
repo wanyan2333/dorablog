@@ -1,6 +1,7 @@
 import express from "express";
 import { requireAuth } from "../../middleware/auth.js";
 import { requiresAuthentication } from "../../middleware/auth-middleware.js";
+import { requireAuth } from "../../middleware/auth.js";
 import { getAllArticles, getArticleById, getArticlesByUserId, getLikedUsers, searchArticles, toggleArticleLike, createArticle, getRecommendedArticles } from "../../data/articles-dao.js";
 import multer from 'multer';
 import path from 'path';
@@ -122,24 +123,33 @@ router.get("/:id/liked", async (req, res) => {
 
 /**
  * Sending a DELETE request to /api/articles/:id will delete an article and all related data.
+ * Requires authentication and user must be the author or admin.
  */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const articleId = parseInt(req.params.id);
+    const userId = req.user.id;
     
     if (isNaN(articleId)) {
-      return res.status(400).json({ message: "Invalid article ID" });
+      return res.status(400).json({ error: "Invalid article ID" });
     }
     
     // 获取数据库连接
     const { getDatabase } = await import("../../data/database.js");
     const db = await getDatabase();
     
-    // 检查文章是否存在
-    const article = await db.get("SELECT * FROM Articles WHERE id = ?", articleId);
+    // 检查文章是否存在并获取作者信息
+    const article = await db.get("SELECT userId FROM Articles WHERE id = ?", articleId);
     if (!article) {
-      return res.status(404).json({ message: "Article not found" });
+      return res.status(404).json({ error: "Article not found" });
     }
+    
+    // 检查权限：只有作者或管理员可以删除
+    if (article.userId !== userId && !req.user.isAdmin) {
+      return res.status(403).json({ error: "You don't have permission to delete this article" });
+    }
+    
+    console.log('User', userId, 'deleting article', articleId, '(author:', article.userId, ')');
     
     // 删除相关数据（按照外键依赖顺序）
     // 1. 删除文章评论
@@ -186,40 +196,54 @@ router.get("/:id", (req, res) => {
 
 /**
  * Sending a POST request to /api/articles/ will create a new article.
- * Authentication temporarily disabled for testing.
+ * Requires user authentication.
  */
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   try {
     const { title, content, tag, headerImage, contentImages } = req.body;
+    const userId = req.user.id; // 从认证中间件获取用户ID
+    
+    // 打印用户信息，确认认证成功
+    console.log('=== Article Creation Request ===');
+    console.log('Authenticated user:', req.user);
+    console.log('User ID:', userId);
+    console.log('Username:', req.user.username);
+    console.log('Article title:', title);
     
     // Validate required fields
     if (!title || !content) {
-      return res.status(400).json({ message: "Title and content are required" });
+      return res.status(400).json({ error: "Title and content are required" });
     }
     
     // Validate content length
     if (title.length > 200) {
-      return res.status(400).json({ message: "Title must be less than 200 characters" });
+      return res.status(400).json({ error: "Title must be less than 200 characters" });
     }
     
     if (content.length > 100000) {
-      return res.status(400).json({ message: "Content must be less than 100,000 characters" });
+      return res.status(400).json({ error: "Content must be less than 100,000 characters" });
     }
     
-    // Create article data (使用默认用户ID进行测试)
+    // Create article data
     const articleData = {
       title: title.trim(),
       content: content.trim(),
-      userId: 2, // 使用默认用户ID (johndoe)
+      userId: userId, // 使用认证用户的ID
       headerUrl: headerImage || null,
       tag: tag || null,
       contentImages: contentImages || [] // 传递图片URL数组
     };
     
-    console.log('Creating article with images:', contentImages);
+    console.log('Creating article for user:', userId, 'with images:', contentImages);
     
     // Create the article
     const createdArticle = await createArticle(articleData);
+    
+    console.log('=== Article Created Successfully ===');
+    console.log('Article ID:', createdArticle.id);
+    console.log('Article Title:', createdArticle.title);
+    console.log('Author User ID:', createdArticle.userId);
+    console.log('================================');
     
     return res.status(201).json({
       message: "Article created successfully",
@@ -228,29 +252,44 @@ router.post("/", async (req, res) => {
     
   } catch (error) {
     console.error("Error creating article:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 /**
  * Sending a PUT request to /api/articles/:id will update an existing article.
+ * Requires authentication and user must be the author or admin.
  */
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireAuth, async (req, res) => {
   try {
     const articleId = parseInt(req.params.id);
     const { content, contentImages } = req.body;
+    const userId = req.user.id;
     
     if (isNaN(articleId)) {
       return res.status(400).json({ message: "Invalid article ID" });
     }
     
     if (!content) {
-      return res.status(400).json({ message: "Content is required" });
+      return res.status(400).json({ error: "Content is required" });
     }
     
     // 获取数据库连接
     const { getDatabase } = await import("../../data/database.js");
     const db = await getDatabase();
+    
+    // 检查文章是否存在并获取作者信息
+    const article = await db.get("SELECT userId FROM Articles WHERE id = ?", articleId);
+    if (!article) {
+      return res.status(404).json({ error: "Article not found" });
+    }
+    
+    // 检查权限：只有作者或管理员可以编辑
+    if (article.userId !== userId && !req.user.isAdmin) {
+      return res.status(403).json({ error: "You don't have permission to edit this article" });
+    }
+    
+    console.log('User', userId, 'editing article', articleId, '(author:', article.userId, ')');
     
     // 更新文章内容
     await db.run(
@@ -304,6 +343,7 @@ router.get("/:id/recommendations", async (req, res) => {
 });
 
 // 文章图片上传端点（支持TinyMCE格式）
+// 前端已经保护了新建/编辑页面，所以这里不需要额外验证
 router.post("/upload-image", upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
@@ -313,7 +353,7 @@ router.post("/upload-image", upload.single('image'), async (req, res) => {
     // 返回图片URL
     const imageUrl = `/uploads/articles/${req.file.filename}`;
     
-    console.log('Article image uploaded:', req.file.filename);
+    console.log('Article image uploaded - filename:', req.file.filename);
     
     // 同时支持TinyMCE格式（location）和自定义格式（success + imageUrl）
     res.json({ 

@@ -5,31 +5,31 @@
   import Footer from '$lib/components/Footer.svelte';
   import { getArticles } from '$lib/api.js';
 
-  // Dynamic article data
+  // 动态文章数据
   let homepageArticles = [];
   let loading = true;
   let error = null;
-  
-  // Daily quote data
+
+  // 每日一言数据
   let dailyQuote = {
-    content: 'Daily quote loading...',
+    content: '正在加载每日一言...',
     author: ''
   };
   let quoteLoading = true;
 
-  // Fetch articles when page loads
+  // 页面加载时获取文章数据
   onMount(async () => {
-    // Fetch daily quote
+    // 获取每日一言
     fetchDailyQuote();
     
     try {
       const articles = await getArticles();
-      // Sort by likes descending, then take top 4
+      // 按点赞数量从大到小排序，然后取前4篇
       const sortedArticles = articles.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
       homepageArticles = sortedArticles.slice(0, 4).map(article => {
-        // Process image URLs, add server address if relative path
+        // 处理图片URL，如果是相对路径则添加服务器地址
         const getImageUrl = (url) => {
-          if (!url) return '/src/assets/images/article/header.png'; // Default header image
+          if (!url) return '/src/assets/images/article/header.png'; // 默认头图
           if (url.startsWith('http://') || url.startsWith('https://')) {
             return url;
           }
@@ -38,31 +38,31 @@
         
         const articleImage = getImageUrl(article.headerUrl);
         
-        console.log('Article:', article.title);
-        console.log('Using image:', articleImage);
+        console.log('文章:', article.title);
+        console.log('使用图片:', articleImage);
         
         return {
           id: article.id,
           avatar: articleImage,
           title: article.title,
-          author: article.authorRealName || article.author, // Prefer real name
-          authorAvatar: article.authorAvatar || '/src/assets/images/avatar-placeholder.png', // Use avatar path from database directly
-          excerpt: article.content ? article.content.substring(0, 100) + '...' : 'No content',
+          author: article.authorRealName || article.author, // 优先使用真实姓名
+          authorAvatar: article.authorAvatar || '/src/assets/images/avatar-placeholder.png', // 直接使用数据库中的头像路径
+          excerpt: article.content ? article.content.substring(0, 100) + '...' : '暂无内容',
           likes: article.likeCount || 0,
-          comments: 0 // Set to 0 for now, can add comment count query later
+          comments: 0 // 暂时设为0，后续可以添加评论数量查询
         };
       });
       loading = false;
     } catch (err) {
-      console.error('Failed to fetch articles:', err);
+      console.error('获取文章数据失败:', err);
       error = err.message;
       loading = false;
     }
   });
   
-  // Fetch daily quote function 
+  // 获取每日一言函数
   async function fetchDailyQuote() {
-    // Reset loading state on each call
+    // 重置加载状态
     quoteLoading = true;
     
     try {
@@ -70,7 +70,7 @@
       let response = null;
       
       try {
-        // Primary: Quotable API
+        // 主要：Quotable API
         response = await fetch('https://api.quotable.io/random?maxLength=120');
         if (response.ok) {
           data = await response.json();
@@ -81,11 +81,11 @@
           return;
         }
       } catch (e) {
-        console.log('Quotable API unavailable, trying other APIs');
+        console.log('Quotable API 不可用，尝试其他 API');
       }
       
       try {
-        // Alternative 1: Advice Slip API
+        // 备用：Advice Slip API
         response = await fetch('https://api.adviceslip.com/advice');
         if (response.ok) {
           const result = await response.json();
@@ -97,17 +97,17 @@
           return;
         }
       } catch (e) {
-        console.log('Advice Slip API unavailable, trying other APIs');
+        console.log('Advice Slip API 不可用，尝试其他 API');
       }
       
-      // If all fail, use default value
-      throw new Error('All APIs are unavailable');
+      // 如果所有 API 都失败，使用默认值
+      throw new Error('所有 API 都不可用');
       
     } catch (err) {
-      console.error('Failed to fetch daily quote:', err);
+      console.error('获取每日一言失败:', err);
       dailyQuote = {
-        content: 'The future belongs to those who believe in the beauty of their dreams.',
-        author: '— Eleanor Roosevelt'
+        content: '未来属于那些相信自己梦想之美丽的人。',
+        author: '— 埃莉诺·罗斯福'
       };
     } finally {
       quoteLoading = false;
@@ -118,12 +118,12 @@
 <main class="home-main">
   {#if loading}
     <div class="loading">
-      <p>Loading articles...</p>
+      <p>正在加载文章...</p>
     </div>
   {:else if error}
     <div class="error">
-      <p>Failed to load articles: {error}</p>
-      <button on:click={() => window.location.reload()}>Reload</button>
+      <p>加载文章失败: {error}</p>
+      <button on:click={() => window.location.reload()}>重新加载</button>
     </div>
   {:else}
     <div class="articles-grid">
@@ -133,7 +133,7 @@
     </div>
   {/if}
   
-  <!-- Optimized daily quote section -->
+  <!-- 每日一言部分 -->
   <div class="daily-quote-section">
     <div class="daily-quote-container">
       <div class="quote-icon">❝</div>
@@ -150,8 +150,8 @@
           {/if}
         {/if}
       </div>
-      <!-- Add refresh button -->
-      <button class="refresh-quote" on:click={fetchDailyQuote} aria-label="Get new quote">
+      <!-- 刷新按钮 -->
+      <button class="refresh-quote" on:click={fetchDailyQuote} aria-label="获取新名言">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
           <path d="M3 3v5h5"/>
@@ -181,7 +181,7 @@
   justify-content: center;
 }
 
-/* Daily quote section optimization */
+/* 每日一言部分样式 */
 .daily-quote-section {
   display: flex;
   justify-content: center;
@@ -236,7 +236,7 @@
   font-weight: 500;
 }
 
-/* Refresh button style */
+/* 刷新按钮样式 */
 .refresh-quote {
   position: absolute;
   right: 20px;
@@ -263,7 +263,7 @@
   transform: rotate(180deg);
 }
 
-/* Loading animation */
+/* 加载动画 */
 .quote-loading {
   display: flex;
   flex-direction: column;
@@ -293,7 +293,7 @@
   }
 }
 
-/* Responsive design */
+/* 响应式设计 */
 @media (max-width: 1024px) {
   .articles-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -394,5 +394,37 @@
 
 .error button:hover {
   background-color: #0052a3;
+}
+
+/* 深色模式支持 */
+[data-theme="dark"] .daily-quote-container {
+  background: rgba(26, 32, 44, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .quote-icon {
+  color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .quote-text {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .quote-source {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .refresh-quote {
+  background: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .refresh-quote:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .skeleton-line {
+  background: linear-gradient(90deg, #1a202c 25%, #2d3748 50%, #1a202c 75%);
+  background-size: 200% 100%;
 }
 </style>

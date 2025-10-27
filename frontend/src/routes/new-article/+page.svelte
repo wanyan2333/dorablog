@@ -4,8 +4,13 @@
   import { api } from '$lib/api';
   import { userStore } from '$lib/session';
   import Editor from '@tinymce/tinymce-svelte';
+  import { showError } from '$lib/toastStore.js';
 
   import Footer from '$lib/components/Footer.svelte';
+  
+  // 用户登录状态
+  let isLoggedIn = false;
+  let currentUser = null;
   
   // Form data
   let title = '';
@@ -18,6 +23,20 @@
   // Form state
   let isSubmitting = false;
   let errors = {};
+  
+  // 检查用户登录状态
+  $: {
+    isLoggedIn = !!$userStore;
+    currentUser = $userStore;
+  }
+  
+  // 页面加载时检查登录状态
+  onMount(() => {
+    if (!isLoggedIn) {
+      // 直接跳转到登录页，不延迟
+      goto('/login');
+    }
+  });
   
   // Available tags (predefined) - 简化为5-6个主要标签
   const availableTags = [
@@ -80,6 +99,7 @@
           
           const response = await fetch('http://localhost:3000/api/articles/upload-image', {
             method: 'POST',
+            credentials: 'include', // 包含认证cookie
             body: formData
           });
           
@@ -341,6 +361,7 @@
         
         const uploadResponse = await fetch('http://localhost:3000/api/articles/upload-image', {
           method: 'POST',
+          credentials: 'include', // 包含认证cookie
           body: formData
         });
         
@@ -371,7 +392,14 @@
       goto(`/articles/${result.article.id}`);
     } catch (error) {
       console.error('API Error:', error);
-      errors.submit = `Network error: ${error.message}`;
+      
+      // 检查是否是未登录错误
+      if (error.status === 401) {
+        goto('/login');
+      } else {
+        errors.submit = error.message || 'Failed to create article';
+        showError(errors.submit);
+      }
     } finally {
       isSubmitting = false;
     }

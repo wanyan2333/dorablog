@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
   import ImageGrid from './ImageGrid.svelte';
   import { api } from '../../api.js';
   import Editor from '@tinymce/tinymce-svelte';
@@ -13,9 +14,11 @@
   export let articleId = null;
   export let initialLikeCount = 0;
   export let tags = [];
+  export let userId = null; // 文章作者的userId
 
   import likeIcon from '../../../assets/images/like-icon.png';
   import commentIcon from '../../../assets/images/comment.png';
+  import { showSuccess, showError } from '$lib/toastStore.js';
   
   let liked = false;
   let likeCount = initialLikeCount;
@@ -49,6 +52,18 @@
   // 添加用户状态检查（和主页一样的方式）
   $: isLoggedIn = $userStore !== null;
   $: currentUser = $userStore;
+  
+  // 检查当前用户是否是文章作者（可以编辑/删除）
+  $: canEditDelete = isLoggedIn && currentUser && userId && (currentUser.id === userId || currentUser.isAdmin);
+  
+  // 调试日志
+  $: if (articleId) {
+    console.log('=== Edit/Delete Permission Check ===');
+    console.log('isLoggedIn:', isLoggedIn);
+    console.log('currentUser:', currentUser);
+    console.log('Article userId:', userId);
+    console.log('canEditDelete:', canEditDelete);
+  }
 
   // Check if user has liked this article on mount and get comment count
   onMount(async () => {
@@ -354,19 +369,15 @@
   }
   
   // 删除文章
-  async function handleDelete() {
+  async function confirmDelete() {
     if (!articleId) return;
-    
-    // 确认删除
-    if (!confirm('Are you sure you want to delete this article? This action cannot be undone.')) {
-      return;
-    }
     
     try {
       console.log('Deleting article:', articleId);
       
       const response = await fetch(`http://localhost:3000/api/articles/${articleId}`, {
         method: 'DELETE',
+        credentials: 'include', // 包含认证cookie
         headers: {
           'Content-Type': 'application/json'
         }
@@ -378,16 +389,23 @@
       
       if (response.ok) {
         console.log('Article deleted successfully');
-        alert('Article deleted successfully!');
-        // 跳转回主页
-        window.location.href = '/';
+        showSuccess('Article deleted successfully!');
+        // 延迟跳转，让用户看到成功提示
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
+      } else if (response.status === 401) {
+        showError('Please log in to delete articles');
+        setTimeout(() => goto('/login'), 1500);
+      } else if (response.status === 403) {
+        showError('You don\'t have permission to delete this article');
       } else {
         console.error('Delete failed:', responseText);
-        alert('Failed to delete article: ' + responseText);
+        showError('Failed to delete article. Please try again.');
       }
     } catch (error) {
       console.error('Error deleting article:', error);
-      alert('Error deleting article: ' + error.message);
+      showError('Error deleting article. Please check your connection.');
     }
   }
   
@@ -446,6 +464,7 @@
       // 调用后端API更新文章
       const response = await fetch(`http://localhost:3000/api/articles/${articleId}`, {
         method: 'PUT',
+        credentials: 'include', // 包含认证cookie
         headers: {
           'Content-Type': 'application/json'
         },
@@ -462,16 +481,23 @@
       if (response.ok) {
         const responseData = JSON.parse(responseText);
         console.log('Success:', responseData);
-        alert('文章保存成功！');
-        // 更新成功，刷新页面
-        window.location.reload();
+        showSuccess('Article saved successfully!');
+        // 延迟刷新，让用户看到成功提示
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else if (response.status === 401) {
+        showError('Please log in to edit articles');
+        setTimeout(() => goto('/login'), 1500);
+      } else if (response.status === 403) {
+        showError('You don\'t have permission to edit this article');
       } else {
         console.error('Save failed:', responseText);
-        alert('保存失败: ' + responseText);
+        showError('Failed to save article. Please try again.');
       }
     } catch (error) {
       console.error('Error saving article:', error);
-      alert('保存时出错: ' + error.message);
+      showError('Error saving article. Please check your connection.');
     } finally {
       isSaving = false;
     }
@@ -527,20 +553,23 @@
       </div>
     {/if}
     
-    <div class="article-actions">
-      <button 
-        class="text-btn edit-text-btn"
-        on:click={startEditing}
-        aria-label="Edit article">
-        ✏️ Edit Article
-      </button>
-      <button 
-        class="text-btn delete-text-btn"
-        on:click={handleDelete}
-        aria-label="Delete article">
-        🗑️ Delete Article
-      </button>
-    </div>
+    <!-- 只有作者或管理员才能看到编辑/删除按钮 -->
+    {#if canEditDelete}
+      <div class="article-actions">
+        <button 
+          class="text-btn edit-text-btn"
+          on:click={startEditing}
+          aria-label="Edit article">
+          ✏️ Edit Article
+        </button>
+        <button 
+          class="text-btn delete-text-btn"
+          on:click={confirmDelete}
+          aria-label="Delete article">
+          🗑️ Delete Article
+        </button>
+      </div>
+    {/if}
   {:else}
     <div class="editor-container">
       <p class="helper-text">💡 Tip: Click the image button (🖼️) in the toolbar, or drag & drop images directly into the editor. Maximum 9 images. Current images are shown below the text.</p>
@@ -569,6 +598,7 @@
     </div>
   {/if}
 </section>
+
 
 <style>
   .card {
