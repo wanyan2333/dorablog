@@ -15,8 +15,6 @@
 
   import likeIcon from '../../../assets/images/like-icon.png';
   import commentIcon from '../../../assets/images/comment.png';
-  import editIcon from '../../../assets/images/edit-icon.svg';
-  import deleteIcon from '../../../assets/images/delete-icon.svg';
   
   let liked = false;
   let likeCount = initialLikeCount;
