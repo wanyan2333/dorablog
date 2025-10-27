@@ -3,6 +3,7 @@
   import ImageGrid from './ImageGrid.svelte';
   import { api } from '../../api.js';
   import Editor from '@tinymce/tinymce-svelte';
+  import { userStore } from '$lib/session.js'; // 添加导入
 
   export let title = '';
   export let text = '';
@@ -45,15 +46,23 @@
     return cleaned;
   })();
 
+  // 添加用户状态检查（和主页一样的方式）
+  $: isLoggedIn = $userStore !== null;
+  $: currentUser = $userStore;
+
   // Check if user has liked this article on mount and get comment count
   onMount(async () => {
     if (articleId) {
       try {
-        // Check like status
-        const likedResponse = await fetch(`http://localhost:3000/api/articles/${articleId}/liked`);
-        if (likedResponse.ok) {
-          const likedData = await likedResponse.json();
-          liked = likedData.liked;
+        // Check like status (只有登录用户才检查)
+        if (isLoggedIn) {
+          const likedResponse = await fetch(`http://localhost:3000/api/articles/${articleId}/liked`, {
+            credentials: 'include'
+          });
+          if (likedResponse.ok) {
+            const likedData = await likedResponse.json();
+            liked = likedData.liked;
+          }
         }
         
         // Get comment count
@@ -70,6 +79,12 @@
 
   // Toggle like/unlike
   async function handleLike() {
+    // 添加登录检查（和主页一样的方式）
+    if (!isLoggedIn) {
+      alert('Please log in to like articles');
+      return;
+    }
+
     if (!articleId || isLoading) return;
     
     isLoading = true;
@@ -79,13 +94,16 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        credentials: 'include' // 添加认证凭据
       });
       
       if (response.ok) {
         const data = await response.json();
         liked = data.liked;
         likeCount = data.likeCount;
+      } else if (response.status === 401) {
+        alert('You need to log in to like articles');
       }
     } catch (error) {
       console.error('Error toggling like:', error);
@@ -485,6 +503,7 @@
     </button>
   </div>
 
+
   <h1 class="title">{title}</h1>
   <div class="meta-line">
     <p class="meta">By <strong>{authorName}</strong> · {date}</p>
@@ -558,6 +577,12 @@
     border-radius: 18px;
     box-shadow: 0 8px 26px rgba(0, 0, 0, 0.08);
     padding: 16px 18px 18px;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  [data-theme="dark"] .card {
+    background: rgba(26, 32, 44, 0.95);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.3);
   }
 
   .action-buttons {
@@ -701,6 +726,12 @@
     font-weight: 800;
     font-size: 2rem;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+    transition: color 0.3s ease;
+  }
+
+  [data-theme="dark"] .title {
+    color: #e2e8f0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
 
   .meta-line {
@@ -716,6 +747,11 @@
     color: #3b5a96;
     font-size: 0.95rem;
     opacity: 0.9;
+    transition: color 0.3s ease;
+  }
+
+  [data-theme="dark"] .meta {
+    color: #9cb3e0;
   }
 
   .tags {
@@ -818,6 +854,11 @@
     color: #123;
     line-height: 1.8;
     margin-bottom: 12px;
+    transition: color 0.3s ease;
+  }
+
+  [data-theme="dark"] .body {
+    color: #cbd5e0;
   }
 
   /* Style for HTML content from TinyMCE */

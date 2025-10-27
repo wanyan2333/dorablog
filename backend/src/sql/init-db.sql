@@ -53,7 +53,7 @@ CREATE TABLE Articles (
     content TEXT,
     userId INTEGER,
     headerUrl TEXT,
-    FOREIGN KEY (userId) REFERENCES Users(id)
+    FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
 );
 
 -- Create comments table
@@ -64,9 +64,9 @@ CREATE TABLE Comments (
     userId INTEGER,
     articleId INTEGER,
     parentCommentId INTEGER,
-    FOREIGN KEY (userId) REFERENCES Users(id),
-    FOREIGN KEY (articleId) REFERENCES Articles(id),
-    FOREIGN KEY (parentCommentId) REFERENCES Comments(id)
+    FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (articleId) REFERENCES Articles(id) ON DELETE CASCADE,
+    FOREIGN KEY (parentCommentId) REFERENCES Comments(id) ON DELETE CASCADE
 );
 
 -- Create images table
@@ -80,7 +80,7 @@ CREATE TABLE ArticleImg (
     articleId INTEGER NOT NULL,
     imgUrl TEXT NOT NULL,
     PRIMARY KEY (articleId, imgUrl),
-    FOREIGN KEY (articleId) REFERENCES Articles(id)
+    FOREIGN KEY (articleId) REFERENCES Articles(id) ON DELETE CASCADE
 );
 
 -- Create article and like relation table
@@ -88,8 +88,8 @@ CREATE TABLE ArticleLike (
     articleId INTEGER NOT NULL,
     userId INTEGER NOT NULL,
     PRIMARY KEY (articleId, userId),
-    FOREIGN KEY (articleId) REFERENCES Articles(id),
-    FOREIGN KEY (userId) REFERENCES Users(id)
+    FOREIGN KEY (articleId) REFERENCES Articles(id) ON DELETE CASCADE,
+    FOREIGN KEY (userId) REFERENCES Users(id) ON DELETE CASCADE
 );
 
 -- Create article and tag relation table
@@ -98,7 +98,7 @@ CREATE TABLE ArticleTag (
     tag VARCHAR(50) NOT NULL,
     color VARCHAR(20),
     PRIMARY KEY (articleId, tag),
-    FOREIGN KEY (articleId) REFERENCES Articles(id)
+    FOREIGN KEY (articleId) REFERENCES Articles(id) ON DELETE CASCADE
 );
 
 -- Dummy messages data

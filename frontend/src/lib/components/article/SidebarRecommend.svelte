@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { goto, invalidateAll } from '$app/navigation';
+  import { userStore } from '$lib/session.js'; // 添加导入
   
   export let articleId = null;
   export let title = 'You may also like';
@@ -8,6 +9,10 @@
   let recommendations = [];
   let loading = true;
   let error = null;
+  
+  // 添加用户状态检查（和主页、详情页一样的方式）
+  $: isLoggedIn = $userStore !== null;
+  $: currentUser = $userStore;
   
   onMount(async () => {
     if (!articleId) return;
@@ -23,20 +28,25 @@
           article.liked = false;
         });
         
-        // 并行检查每篇文章的点赞状态
-        const likePromises = recommendations.map(async (article) => {
-          try {
-            const likeResponse = await fetch(`http://localhost:3000/api/articles/${article.id}/liked`);
-            if (likeResponse.ok) {
-              const likeData = await likeResponse.json();
-              article.liked = likeData.liked;
+        // 只有登录用户才检查点赞状态
+        if (isLoggedIn) {
+          // 并行检查每篇文章的点赞状态
+          const likePromises = recommendations.map(async (article) => {
+            try {
+              const likeResponse = await fetch(`http://localhost:3000/api/articles/${article.id}/liked`, {
+                credentials: 'include' // 添加认证凭据
+              });
+              if (likeResponse.ok) {
+                const likeData = await likeResponse.json();
+                article.liked = likeData.liked;
+              }
+            } catch (err) {
+              console.error('Error checking like status for article', article.id, err);
             }
-          } catch (err) {
-            console.error('Error checking like status for article', article.id, err);
-          }
-        });
-        
-        await Promise.all(likePromises);
+          });
+          
+          await Promise.all(likePromises);
+        }
       } else {
         error = 'Failed to load recommendations';
       }
@@ -64,6 +74,12 @@
   }
 
   async function handleLikeClick(articleId) {
+    // 添加登录检查（和主页、详情页一样的方式）
+    if (!isLoggedIn) {
+      alert('Please log in to like articles');
+      return;
+    }
+    
     const article = recommendations.find(a => a.id === articleId);
     if (!article || article.isLoading) return;
     
@@ -74,7 +90,8 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        credentials: 'include' // 添加认证凭据
       });
       
       if (response.ok) {
@@ -84,6 +101,8 @@
         article.likeCount = result.likeCount;
         // 强制重新渲染
         recommendations = [...recommendations];
+      } else if (response.status === 401) {
+        alert('You need to log in to like articles');
       }
     } catch (error) {
       console.error('Error toggling like:', error);
@@ -189,6 +208,7 @@
 </section>
 
 <style>
+  /* 保持原有样式不变 */
   .card {
     background: rgba(255, 255, 255, 0.92);
     border-radius: 16px;

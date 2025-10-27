@@ -75,6 +75,7 @@ router.get("/search", (req, res) => {
  */
 router.post("/like/:id", async (req, res) => {
     const articleId = req.params.id;
+
     // TODO: Replace with req.user.id when authentication is enabled
     const userId = 2; // Hardcoded for testing
     
