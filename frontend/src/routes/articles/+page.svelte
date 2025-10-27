@@ -41,9 +41,10 @@
   .page-title {
     text-align: center;
     font-size: 2.5rem;
-    color: #2c3e50;
+    color: var(--text-color, #2c3e50);
     margin-bottom: 2rem;
     font-weight: 700;
+    transition: color 0.3s ease;
   }
 
   .article-grid {
@@ -69,9 +70,19 @@
     gap: 8px;
   }
 
+  /* 深色模式下的按钮样式 */
+  [data-theme="dark"] .btn {
+    background: linear-gradient(135deg, #4c5f8c 0%, #5a3e73 100%);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+  }
+
   .btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  [data-theme="dark"] .btn:hover {
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
   }
 
   .article-number {
