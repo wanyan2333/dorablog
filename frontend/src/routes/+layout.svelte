@@ -2,6 +2,7 @@
   import "$lib/css/app.css";
   import { onMount } from 'svelte';
   import Navbar from "$lib/components/Navbar.svelte";
+  import ToastContainer from "$lib/components/ToastContainer.svelte";
   
   import { page } from "$app/stores";
   $: path = $page.url.pathname;
@@ -25,3 +26,4 @@
 
 <Navbar />
 <slot />
+<ToastContainer />
