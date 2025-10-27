@@ -1,7 +1,6 @@
 import express from "express";
 import { requireAuth } from "../../middleware/auth.js";
 import { requiresAuthentication } from "../../middleware/auth-middleware.js";
-import { requireAuth } from "../../middleware/auth.js";
 import { getAllArticles, getArticleById, getArticlesByUserId, getLikedUsers, searchArticles, toggleArticleLike, createArticle, getRecommendedArticles } from "../../data/articles-dao.js";
 import multer from 'multer';
 import path from 'path';

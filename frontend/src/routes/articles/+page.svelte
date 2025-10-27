@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte';
+  import { flip } from 'svelte/animate'; // 导入 flip 动画
   import { goto } from '$app/navigation';
   import { getArticles } from '$lib/api.js';
   import ArticleCard from '$lib/components/ArticleCard.svelte';
@@ -252,7 +253,9 @@
   {:else}
     <div class="articles-grid">
       {#each articleCards as article (article.id)}
-        <ArticleCard {article} />
+        <div animate:flip={{ duration: 555 }}>
+          <ArticleCard {article} />
+        </div>
       {/each}
     </div>
   {/if}
@@ -279,11 +282,20 @@
     transition: color 0.3s ease;
   }
 
-  .page-subtitle {
-    font-size: 1.1rem;
-    color: #7f8c8d;
-    margin: 0;
-  }
+.page-subtitle {
+  font-size: 1.1rem;
+  color: #2c3e50; 
+  margin: 0;
+}
+[data-theme="dark"] .articles-page .header-section .page-subtitle,
+[data-theme="dark"] .page-subtitle {
+  color: #ffffff !important; 
+}
+
+.dark .page-subtitle,
+.dark-theme .page-subtitle {
+  color: #ffffff !important;
+}
 
   /* 搜索和排序控制栏 */
   .controls-bar {
@@ -404,27 +416,41 @@
     transform: translateY(-1px);
   }
 
-  /* 结果信息 */
-  .results-info {
-    margin-bottom: 1.5rem;
-    padding: 0 0.25rem;
-  }
+ 
+/* 结果信息 */
+.results-info {
+  margin-bottom: 1.5rem;
+  padding: 0 0.25rem;
+}
 
-  .results-info p {
-    color: #7f8c8d;
-    font-size: 0.95rem;
-  }
+.results-info p {
+  color: #7f8c8d;
+  font-size: 0.95rem;
+}
 
-  .results-info strong {
-    color: #2c3e50;
-    font-weight: 600;
-  }
+.results-info strong {
+  color: #2c3e50;
+  font-weight: 600;
+}
 
-  .results-info em {
-    color: #667eea;
-    font-style: normal;
-    font-weight: 600;
-  }
+.results-info em {
+  color: #667eea;
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* 暗色模式支持 */
+[data-theme="dark"] .results-info p {
+  color: #a0aec0;
+}
+
+[data-theme="dark"] .results-info strong {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .results-info em {
+  color: #90cdf4;
+}
 
   /* 文章网格 */
   .articles-grid {
