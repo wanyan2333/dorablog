@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import ImageGrid from './ImageGrid.svelte';
   import { api } from '../../api.js';
+  import Editor from '@tinymce/tinymce-svelte';
 
   export let title = '';
   export let text = '';
@@ -19,6 +20,23 @@
   let likeCount = initialLikeCount;
   let commentCount = 0;
   let isLoading = false;
+  
+  // 编辑模式相关
+  let isEditing = false;
+  let editedContent = '';
+  let uploadedImages = [...images]; // 复制现有图片
+  let isSaving = false;
+  
+  // 格式化文本内容，确保显示时文字末尾没有空白
+  $: displayText = (() => {
+    if (!text) return '';
+    let cleaned = text.trim();
+    // 移除末尾的所有空段落和空标签
+    cleaned = cleaned.replace(/(<p><br><\/p>\s*)+$/gi, '');
+    cleaned = cleaned.replace(/(<p>\s*<\/p>\s*)+$/gi, '');
+    cleaned = cleaned.replace(/(<br\s*\/?>\s*)+$/gi, '');
+    return cleaned;
+  })();
 
   // Check if user has liked this article on mount and get comment count
   onMount(async () => {
@@ -85,31 +103,348 @@
     };
     return colors[colorName] || colors.gray;
   }
+  
+  // TinyMCE配置（与上传页相同）
+  const apiKey = 'z285vuatv7et9z4jdzehijd9c1gcajgfo9gbik4k63hpqqyf';
+  
+  const editorConfig = {
+    height: 400,
+    menubar: 'file edit view insert format',
+    plugins: 'image lists link anchor autolink charmap codesample emoticons media searchreplace table visualblocks wordcount',
+    toolbar: 'undo redo | blocks | bold italic | image link | alignleft aligncenter alignright | bullist numlist | removeformat',
+    content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; }',
+    branding: false,
+    promotion: false,
+    
+    // 图片上传配置
+    images_upload_handler: async (blobInfo, progress) => {
+      return new Promise(async (resolve, reject) => {
+        try {
+          // 检查图片数量限制（最多9张）
+          if (uploadedImages.length >= 9) {
+            reject('Maximum 9 images allowed. Please remove some images before uploading more.');
+            return;
+          }
+          
+          // 验证文件类型
+          const file = blobInfo.blob();
+          if (!file.type.startsWith('image/')) {
+            reject('Please select an image file');
+            return;
+          }
+          
+          // 验证文件大小（最大10MB）
+          if (file.size > 10 * 1024 * 1024) {
+            reject('File size must be less than 10MB');
+            return;
+          }
+          
+          // 验证文件扩展名
+          const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+          const fileName = blobInfo.filename().toLowerCase();
+          const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+          if (!allowedExtensions.includes(fileExtension)) {
+            reject('Only JPG, PNG, GIF, and WebP images are allowed');
+            return;
+          }
+          
+          // 上传到后端
+          const formData = new FormData();
+          formData.append('image', file, blobInfo.filename());
+          
+          const response = await fetch('http://localhost:3000/api/articles/upload-image', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            const imageUrl = 'http://localhost:3000' + result.imageUrl;
+            // 保存图片URL到数组
+            uploadedImages = [...uploadedImages, result.imageUrl];
+            console.log('Uploaded images:', uploadedImages);
+            resolve(imageUrl);
+          } else {
+            reject('Upload failed: ' + (result.error || 'Unknown error'));
+          }
+        } catch (error) {
+          reject('Upload failed: ' + error.message);
+        }
+      });
+    },
+    
+    // 简化图片对话框配置
+    image_advtab: false,
+    image_title: false,
+    image_description: false,
+    image_dimensions: false,
+    image_caption: false,
+    paste_data_images: true,
+    
+    // 自定义对话框行为
+    setup: (editor) => {
+      // 隐藏Class字段并切换到Upload标签
+      editor.on('OpenWindow', (e) => {
+        setTimeout(() => {
+          const dialog = document.querySelector('.tox-dialog');
+          if (dialog) {
+            const formGroups = dialog.querySelectorAll('.tox-form__group');
+            formGroups.forEach((group) => {
+              const label = group.querySelector('label');
+              if (label && label.textContent.toLowerCase().includes('class')) {
+                group.style.display = 'none';
+              }
+            });
+            
+            const tabs = dialog.querySelectorAll('.tox-dialog__body-nav-item');
+            tabs.forEach((tab) => {
+              const tabText = tab.textContent.toLowerCase();
+              if (tabText.includes('upload')) {
+                tab.click();
+              }
+            });
+          }
+        }, 10);
+      });
+      
+      // 图片样式处理
+      editor.on('NodeChange', (e) => {
+        const images = editor.getBody().querySelectorAll('img:not([data-processed])');
+        images.forEach((img) => {
+          img.setAttribute('data-processed', 'true');
+          img.classList.add('thumbnail-image');
+          
+          const body = editor.getBody();
+          const allImages = body.querySelectorAll('img.thumbnail-image');
+          const textContent = editor.getContent({ format: 'text' }).trim();
+          
+          if (allImages.length === 1) {
+            const hasText = textContent && textContent.length > 0;
+            
+            if (!hasText) {
+              const p = editor.getDoc().createElement('p');
+              p.innerHTML = '<br>';
+              body.insertBefore(p, body.firstChild);
+            } else {
+              const parent = img.parentNode;
+              const imageContainer = editor.getDoc().createElement('p');
+              if (parent) {
+                parent.removeChild(img);
+              }
+              imageContainer.appendChild(img);
+              body.appendChild(imageContainer);
+              if (parent && parent.childNodes.length === 0 && parent.parentNode) {
+                parent.parentNode.removeChild(parent);
+              }
+            }
+            
+            setTimeout(() => {
+              const range = editor.getDoc().createRange();
+              const sel = editor.selection.getSel();
+              range.setStartAfter(img);
+              range.setEndAfter(img);
+              sel.removeAllRanges();
+              sel.addRange(range);
+              editor.focus();
+            }, 10);
+          } else {
+            setTimeout(() => {
+              const range = editor.getDoc().createRange();
+              const sel = editor.selection.getSel();
+              range.setStartAfter(img);
+              range.setEndAfter(img);
+              sel.removeAllRanges();
+              sel.addRange(range);
+              editor.focus();
+            }, 10);
+          }
+        });
+      });
+      
+      // 注入CSS样式
+      editor.on('init', () => {
+        const style = editor.getDoc().createElement('style');
+        style.textContent = `
+          .thumbnail-image {
+            width: 150px !important;
+            height: 150px !important;
+            object-fit: cover !important;
+            display: inline-block !important;
+            margin: 5px !important;
+            border-radius: 8px !important;
+            vertical-align: top !important;
+          }
+        `;
+        editor.getDoc().head.appendChild(style);
+      });
+    }
+  };
+  
+  // 进入编辑模式
+  function startEditing() {
+    isEditing = true;
+    uploadedImages = [...images];
+    
+    // 清理文本内容：移除末尾所有空段落和空白，确保图片紧贴在文字后面
+    let cleanText = text.trim();
+    
+    // 移除末尾的所有空段落（<p><br></p>）和空的<p></p>标签
+    cleanText = cleanText.replace(/(<p><br><\/p>\s*)+$/gi, '');
+    cleanText = cleanText.replace(/(<p>\s*<\/p>\s*)+$/gi, '');
+    cleanText = cleanText.replace(/(<br\s*\/?>\s*)+$/gi, '');
+    
+    // 将文本内容和图片组合到编辑器中
+    let contentWithImages = cleanText;
+    
+    // 在文本内容后添加图片（作为缩略图）
+    if (images && images.length > 0) {
+      // 添加一个新段落包含图片，紧接在文字后面
+      contentWithImages += '<p>';
+      images.forEach((imageUrl) => {
+        const fullUrl = imageUrl.startsWith('http') ? imageUrl : `http://localhost:3000${imageUrl}`;
+        contentWithImages += `<img src="${fullUrl}" class="thumbnail-image" data-processed="true" style="width: 150px; height: 150px; object-fit: cover; display: inline-block; margin: 5px; border-radius: 8px; vertical-align: top;" />`;
+      });
+      contentWithImages += '</p>';
+    }
+    
+    console.log('Start editing - cleanText:', cleanText);
+    console.log('Start editing - contentWithImages:', contentWithImages);
+    
+    editedContent = contentWithImages;
+  }
+  
+  // 取消编辑
+  function cancelEditing() {
+    isEditing = false;
+    editedContent = '';
+    uploadedImages = [...images];
+  }
+  
+  // 保存编辑
+  async function saveEditing() {
+    if (isSaving) return;
+    
+    isSaving = true;
+    
+    try {
+      console.log('Starting save...');
+      console.log('editedContent:', editedContent);
+      
+      // 从content中提取所有图片URL
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = editedContent.trim() || '';
+      
+      const imgs = tempDiv.querySelectorAll('img');
+      const imageUrls = [];
+      
+      imgs.forEach(img => {
+        let src = img.getAttribute('src');
+        // 如果是完整URL，提取相对路径
+        if (src && src.startsWith('http://localhost:3000')) {
+          src = src.replace('http://localhost:3000', '');
+        }
+        if (src) {
+          imageUrls.push(src);
+        }
+        // 从DOM中移除图片
+        img.remove();
+      });
+      
+      let contentWithoutImages = tempDiv.innerHTML.trim();
+      
+      // 移除末尾的所有空段落、空标签和换行，确保文字和图片之间没有任何空白
+      contentWithoutImages = contentWithoutImages.replace(/(<p><br><\/p>\s*)+$/gi, '');
+      contentWithoutImages = contentWithoutImages.replace(/(<p>\s*<\/p>\s*)+$/gi, '');
+      contentWithoutImages = contentWithoutImages.replace(/(<br\s*\/?>\s*)+$/gi, '');
+      
+      console.log('Saving article:');
+      console.log('Content (without images):', contentWithoutImages);
+      console.log('Image URLs:', imageUrls);
+      
+      // 调用后端API更新文章
+      const response = await fetch(`http://localhost:3000/api/articles/${articleId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: contentWithoutImages,
+          contentImages: imageUrls
+        })
+      });
+      
+      const responseText = await response.text();
+      console.log('Response status:', response.status);
+      console.log('Response text:', responseText);
+      
+      if (response.ok) {
+        const responseData = JSON.parse(responseText);
+        console.log('Success:', responseData);
+        alert('文章保存成功！');
+        // 更新成功，刷新页面
+        window.location.reload();
+      } else {
+        console.error('Save failed:', responseText);
+        alert('保存失败: ' + responseText);
+      }
+    } catch (error) {
+      console.error('Error saving article:', error);
+      alert('保存时出错: ' + error.message);
+    } finally {
+      isSaving = false;
+    }
+  }
 </script>
 
 <section class="card">
   <div class="action-buttons">
-    <button 
-      class="like-btn" 
-      class:liked={liked}
-      class:loading={isLoading}
-      on:click={handleLike}
-      disabled={isLoading}
-      aria-label={liked ? 'Unlike' : 'Like'}>
-      <img src={likeIcon} alt="like" />
-      {#if likeCount > 0}
-        <span class="like-count">{likeCount}</span>
-      {/if}
-    </button>
-    
-    <button 
-      class="comment-btn"
-      aria-label="Comments">
-      <img src={commentIcon} alt="comment" />
-      {#if commentCount > 0}
-        <span class="comment-count">{commentCount}</span>
-      {/if}
-    </button>
+    {#if !isEditing}
+      <button 
+        class="edit-btn"
+        on:click={startEditing}
+        aria-label="Edit article">
+        ✏️
+      </button>
+      
+      <button 
+        class="like-btn" 
+        class:liked={liked}
+        class:loading={isLoading}
+        on:click={handleLike}
+        disabled={isLoading}
+        aria-label={liked ? 'Unlike' : 'Like'}>
+        <img src={likeIcon} alt="like" />
+        {#if likeCount > 0}
+          <span class="like-count">{likeCount}</span>
+        {/if}
+      </button>
+      
+      <button 
+        class="comment-btn"
+        aria-label="Comments">
+        <img src={commentIcon} alt="comment" />
+        {#if commentCount > 0}
+          <span class="comment-count">{commentCount}</span>
+        {/if}
+      </button>
+    {:else}
+      <button 
+        class="save-btn"
+        on:click={saveEditing}
+        disabled={isSaving}
+        aria-label="Save changes">
+        {isSaving ? '💾 Saving...' : '💾 Save'}
+      </button>
+      
+      <button 
+        class="cancel-btn"
+        on:click={cancelEditing}
+        disabled={isSaving}
+        aria-label="Cancel editing">
+        ❌ Cancel
+      </button>
+    {/if}
   </div>
 
   <h1 class="title">{title}</h1>
@@ -126,11 +461,22 @@
     {/if}
   </div>
 
-  <article class="body">{@html text}</article>
+  {#if !isEditing}
+    <article class="body">{@html displayText}</article>
 
-  {#if images && images.length}
-    <div class="images">
-      <ImageGrid images={images} />
+    {#if images && images.length}
+      <div class="images">
+        <ImageGrid images={images} />
+      </div>
+    {/if}
+  {:else}
+    <div class="editor-container">
+      <p class="helper-text">💡 Tip: Click the image button (🖼️) in the toolbar, or drag & drop images directly into the editor. Maximum 9 images. Current images are shown below the text.</p>
+      <Editor
+        bind:value={editedContent}
+        conf={editorConfig}
+        apiKey={apiKey}
+      />
     </div>
   {/if}
 </section>
@@ -152,7 +498,7 @@
     gap: 8px;
   }
 
-  .like-btn, .comment-btn {
+  .edit-btn, .save-btn, .cancel-btn, .like-btn, .comment-btn {
     min-width: 36px;
     height: 36px;
     padding: 0 8px;
@@ -166,6 +512,37 @@
     gap: 6px;
     cursor: pointer;
     transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  
+  .edit-btn {
+    font-size: 1.2rem;
+  }
+  
+  .save-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 0 12px;
+  }
+  
+  .save-btn:hover:not(:disabled) {
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+  }
+  
+  .save-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .cancel-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    padding: 0 12px;
+  }
+  
+  .cancel-btn:hover:not(:disabled) {
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
   }
 
   .like-btn img, .comment-btn img {
@@ -342,5 +719,27 @@
 
   .images {
     margin-top: 6px;
+  }
+  
+  .editor-container {
+    margin: 20px 0;
+  }
+  
+  .helper-text {
+    font-size: 0.85rem;
+    color: #667eea;
+    margin: 0 0 0.5rem 0;
+    font-style: italic;
+    background: #f0f4ff;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border-left: 3px solid #667eea;
+  }
+  
+  .images-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f2a66;
+    margin: 0 0 10px 0;
   }
 </style>

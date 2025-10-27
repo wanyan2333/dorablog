@@ -181,6 +181,56 @@ router.post("/", async (req, res) => {
 });
 
 /**
+ * Sending a PUT request to /api/articles/:id will update an existing article.
+ */
+router.put("/:id", async (req, res) => {
+  try {
+    const articleId = parseInt(req.params.id);
+    const { content, contentImages } = req.body;
+    
+    if (isNaN(articleId)) {
+      return res.status(400).json({ message: "Invalid article ID" });
+    }
+    
+    if (!content) {
+      return res.status(400).json({ message: "Content is required" });
+    }
+    
+    // 获取数据库连接
+    const { getDatabase } = await import("../../data/database.js");
+    const db = await getDatabase();
+    
+    // 更新文章内容
+    await db.run(
+      "UPDATE Articles SET content = ? WHERE id = ?",
+      [content.trim(), articleId]
+    );
+    
+    // 删除旧的内容图片
+    await db.run("DELETE FROM ArticleImg WHERE articleId = ?", articleId);
+    
+    // 添加新的内容图片
+    if (contentImages && contentImages.length > 0) {
+      console.log('Updating content images:', contentImages);
+      for (const imageUrl of contentImages) {
+        await db.run(
+          "INSERT INTO ArticleImg (articleId, imgUrl) VALUES (?, ?)",
+          [articleId, imageUrl]
+        );
+      }
+    }
+    
+    return res.status(200).json({
+      message: "Article updated successfully"
+    });
+    
+  } catch (error) {
+    console.error("Error updating article:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+/**
  * Sending a GET request to /api/articles/:id/recommendations will return recommended articles for the given article.
  */
 router.get("/:id/recommendations", async (req, res) => {
