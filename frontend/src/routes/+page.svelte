@@ -27,6 +27,30 @@
           return `http://localhost:3000${url}`;
         };
         
+        // 处理头像URL，添加缓存破坏
+        const getAvatarUrl = (url) => {
+          if (!url) return '/src/assets/images/avatar-placeholder.png';
+          
+          let fullUrl;
+          if (url.startsWith('http://') || url.startsWith('https://')) {
+            // External URL
+            fullUrl = url;
+          } else if (url.startsWith('/avatars/')) {
+            // Frontend static avatar (default avatars)
+            fullUrl = url; // Keep as-is, will be served by frontend
+          } else if (url.startsWith('/uploads/')) {
+            // Backend uploaded avatar
+            fullUrl = `http://localhost:3000${url}`;
+          } else {
+            // Fallback: assume it's a backend URL
+            fullUrl = `http://localhost:3000${url}`;
+          }
+          
+          // Add timestamp to prevent browser caching
+          const separator = fullUrl.includes('?') ? '&' : '?';
+          return `${fullUrl}${separator}t=${Date.now()}`;
+        };
+        
         const articleImage = getImageUrl(article.headerUrl);
         
         console.log('文章:', article.title);
@@ -36,8 +60,8 @@
           id: article.id,
           avatar: articleImage,
           title: article.title,
-          author: article.authorRealName || article.author, // 优先使用真实姓名
-          authorAvatar: article.authorAvatar || '/src/assets/images/avatar-placeholder.png', // 直接使用数据库中的头像路径
+          author: article.author, // 使用username
+          authorAvatar: getAvatarUrl(article.authorAvatar), // 处理头像URL并添加缓存破坏
           excerpt: article.content ? article.content.substring(0, 100) + '...' : '暂无内容',
           likes: article.likeCount || 0,
           comments: 0 // 暂时设为0，后续可以添加评论数量查询

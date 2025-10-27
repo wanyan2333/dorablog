@@ -23,6 +23,7 @@
       articleId={article.id}
       initialLikeCount={article.likeCount}
       tags={article.tags}
+      userId={article.userId}
     />
 
     <CommentsList articleId={article.id} articleAuthorId={article.userId} />
