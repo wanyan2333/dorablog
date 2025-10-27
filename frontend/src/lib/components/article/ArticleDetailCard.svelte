@@ -15,6 +15,8 @@
 
   import likeIcon from '../../../assets/images/like-icon.png';
   import commentIcon from '../../../assets/images/comment.png';
+  import editIcon from '../../../assets/images/edit-icon.svg';
+  import deleteIcon from '../../../assets/images/delete-icon.svg';
   
   let liked = false;
   let likeCount = initialLikeCount;
@@ -335,6 +337,44 @@
     uploadedImages = [...images];
   }
   
+  // 删除文章
+  async function handleDelete() {
+    if (!articleId) return;
+    
+    // 确认删除
+    if (!confirm('Are you sure you want to delete this article? This action cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      console.log('Deleting article:', articleId);
+      
+      const response = await fetch(`http://localhost:3000/api/articles/${articleId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const responseText = await response.text();
+      console.log('Delete response status:', response.status);
+      console.log('Delete response text:', responseText);
+      
+      if (response.ok) {
+        console.log('Article deleted successfully');
+        alert('Article deleted successfully!');
+        // 跳转回主页
+        window.location.href = '/';
+      } else {
+        console.error('Delete failed:', responseText);
+        alert('Failed to delete article: ' + responseText);
+      }
+    } catch (error) {
+      console.error('Error deleting article:', error);
+      alert('Error deleting article: ' + error.message);
+    }
+  }
+  
   // 保存编辑
   async function saveEditing() {
     if (isSaving) return;
@@ -424,52 +464,27 @@
 
 <section class="card">
   <div class="action-buttons">
-    {#if !isEditing}
-      <button 
-        class="edit-btn"
-        on:click={startEditing}
-        aria-label="Edit article">
-        ✏️
-      </button>
-      
-      <button 
-        class="like-btn" 
-        class:liked={liked}
-        class:loading={isLoading}
-        on:click={handleLike}
-        disabled={isLoading}
-        aria-label={liked ? 'Unlike' : 'Like'}>
-        <img src={likeIcon} alt="like" />
-        {#if likeCount > 0}
-          <span class="like-count">{likeCount}</span>
-        {/if}
-      </button>
-      
-      <button 
-        class="comment-btn"
-        aria-label="Comments">
-        <img src={commentIcon} alt="comment" />
-        {#if commentCount > 0}
-          <span class="comment-count">{commentCount}</span>
-        {/if}
-      </button>
-    {:else}
-      <button 
-        class="save-btn"
-        on:click={saveEditing}
-        disabled={isSaving}
-        aria-label="Save changes">
-        {isSaving ? '💾 Saving...' : '💾 Save'}
-      </button>
-      
-      <button 
-        class="cancel-btn"
-        on:click={cancelEditing}
-        disabled={isSaving}
-        aria-label="Cancel editing">
-        ❌ Cancel
-      </button>
-    {/if}
+    <button 
+      class="like-btn" 
+      class:liked={liked}
+      class:loading={isLoading}
+      on:click={handleLike}
+      disabled={isLoading}
+      aria-label={liked ? 'Unlike' : 'Like'}>
+      <img src={likeIcon} alt="like" />
+      {#if likeCount > 0}
+        <span class="like-count">{likeCount}</span>
+      {/if}
+    </button>
+    
+    <button 
+      class="comment-btn"
+      aria-label="Comments">
+      <img src={commentIcon} alt="comment" />
+      {#if commentCount > 0}
+        <span class="comment-count">{commentCount}</span>
+      {/if}
+    </button>
   </div>
 
   <h1 class="title">{title}</h1>
@@ -494,6 +509,21 @@
         <ImageGrid images={images} />
       </div>
     {/if}
+    
+    <div class="article-actions">
+      <button 
+        class="text-btn edit-text-btn"
+        on:click={startEditing}
+        aria-label="Edit article">
+        ✏️ Edit Article
+      </button>
+      <button 
+        class="text-btn delete-text-btn"
+        on:click={handleDelete}
+        aria-label="Delete article">
+        🗑️ Delete Article
+      </button>
+    </div>
   {:else}
     <div class="editor-container">
       <p class="helper-text">💡 Tip: Click the image button (🖼️) in the toolbar, or drag & drop images directly into the editor. Maximum 9 images. Current images are shown below the text.</p>
@@ -502,6 +532,23 @@
         conf={editorConfig}
         apiKey={apiKey}
       />
+    </div>
+    
+    <div class="article-actions editing">
+      <button 
+        class="text-btn save-text-btn"
+        on:click={saveEditing}
+        disabled={isSaving}
+        aria-label="Save changes">
+        {isSaving ? '💾 Saving...' : '💾 Save Changes'}
+      </button>
+      <button 
+        class="text-btn cancel-text-btn"
+        on:click={cancelEditing}
+        disabled={isSaving}
+        aria-label="Cancel editing">
+        ❌ Cancel
+      </button>
     </div>
   {/if}
 </section>
@@ -523,7 +570,7 @@
     gap: 8px;
   }
 
-  .edit-btn, .save-btn, .cancel-btn, .like-btn, .comment-btn {
+  .delete-btn, .edit-btn, .save-btn, .cancel-btn, .like-btn, .comment-btn {
     min-width: 36px;
     height: 36px;
     padding: 0 8px;
@@ -541,8 +588,36 @@
     font-weight: 600;
   }
   
-  .edit-btn {
-    font-size: 1.2rem;
+  .delete-btn img {
+    width: 20px;
+    height: 20px;
+    display: block;
+    transition: transform 0.3s ease;
+  }
+  
+  .delete-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
+  }
+  
+  .delete-btn:hover img {
+    transform: scale(1.1);
+  }
+  
+  .edit-btn img {
+    width: 20px;
+    height: 20px;
+    display: block;
+    transition: transform 0.3s ease;
+  }
+  
+  .edit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  }
+  
+  .edit-btn:hover img {
+    transform: scale(1.1);
   }
   
   .save-btn {
@@ -661,6 +736,84 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .article-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(59, 90, 150, 0.1);
+  }
+  
+  .article-actions.editing {
+    border-top: none;
+    padding-top: 16px;
+  }
+  
+  .text-btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 24px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .edit-text-btn {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    color: white;
+  }
+  
+  .edit-text-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  }
+  
+  .delete-text-btn {
+    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+    color: white;
+  }
+  
+  .delete-text-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  }
+  
+  .save-text-btn {
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    color: white;
+  }
+  
+  .save-text-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  }
+  
+  .save-text-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  .cancel-text-btn {
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    color: white;
+  }
+  
+  .cancel-text-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(100, 116, 139, 0.4);
+  }
+  
+  .cancel-text-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 
   .body {

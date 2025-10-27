@@ -119,6 +119,56 @@ router.get("/:id/liked", async (req, res) => {
 });
 
 /**
+ * Sending a DELETE request to /api/articles/:id will delete an article and all related data.
+ */
+router.delete("/:id", async (req, res) => {
+  try {
+    const articleId = parseInt(req.params.id);
+    
+    if (isNaN(articleId)) {
+      return res.status(400).json({ message: "Invalid article ID" });
+    }
+    
+    // 获取数据库连接
+    const { getDatabase } = await import("../../data/database.js");
+    const db = await getDatabase();
+    
+    // 检查文章是否存在
+    const article = await db.get("SELECT * FROM Articles WHERE id = ?", articleId);
+    if (!article) {
+      return res.status(404).json({ message: "Article not found" });
+    }
+    
+    // 删除相关数据（按照外键依赖顺序）
+    // 1. 删除文章评论
+    await db.run("DELETE FROM Comments WHERE articleId = ?", articleId);
+    
+    // 2. 删除文章点赞
+    await db.run("DELETE FROM ArticleLike WHERE articleId = ?", articleId);
+    
+    // 3. 删除文章标签
+    await db.run("DELETE FROM ArticleTag WHERE articleId = ?", articleId);
+    
+    // 4. 删除文章图片
+    await db.run("DELETE FROM ArticleImg WHERE articleId = ?", articleId);
+    
+    // 5. 最后删除文章本身
+    await db.run("DELETE FROM Articles WHERE id = ?", articleId);
+    
+    console.log(`Article ${articleId} and all related data deleted successfully`);
+    
+    return res.status(200).json({ 
+      message: "Article deleted successfully",
+      articleId: articleId
+    });
+    
+  } catch (error) {
+    console.error("Error deleting article:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+/**
  * Sending a GET request to /api/articles/:id will return the article with the given id.
  */
 router.get("/:id", (req, res) => {
