@@ -4,8 +4,8 @@
   import ImageGrid from './ImageGrid.svelte';
   import { api } from '../../api.js';
   import Editor from '@tinymce/tinymce-svelte';
-  import { userStore } from '$lib/session.js'; // 添加导入
-
+  import { userStore } from '$lib/session.js'; 
+  
   export let title = '';
   export let text = '';
   export let images = [];
@@ -96,7 +96,8 @@
   async function handleLike() {
     // 添加登录检查（和主页一样的方式）
     if (!isLoggedIn) {
-      alert('Please log in to like articles');
+      // 本次改动：使用 Toast 通知替代 alert
+      showError('Please log in to like articles');
       return;
     }
 
@@ -118,10 +119,16 @@
         liked = data.liked;
         likeCount = data.likeCount;
       } else if (response.status === 401) {
-        alert('You need to log in to like articles');
+        // 本次改动：使用 Toast 通知替代 alert
+        showError('You need to log in to like articles');
+      } else {
+        // 本次改动：添加错误处理
+        showError('Failed to like article');
       }
     } catch (error) {
       console.error('Error toggling like:', error);
+      // 本次改动：添加错误处理
+      showError('Error liking article');
     } finally {
       isLoading = false;
     }

@@ -2,6 +2,7 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { userStore } from '$lib/session.js'; 
+  import { showError } from '$lib/toastStore.js'; // 添加这行导入
   
   export let article = {
     id: 1,
@@ -40,13 +41,13 @@
     }
   });
 
-  // 添加点赞处理函数
+ // 修改 handleLikeClick 函数
   async function handleLikeClick(event) {
     event.stopPropagation();
     
     // 直接使用 isLoggedIn 变量判断是否登录
     if (!isLoggedIn) {
-      alert('Please log in to like articles');
+      showError('Please log in to like articles'); // 替换 alert 为 Toast 通知
       return;
     }
     
@@ -61,12 +62,14 @@
         const result = await response.json();
         likeCount = result.likeCount;
       } else if (response.status === 401) {
-        alert('You need to log in to like articles');
+        showError('You need to log in to like articles'); // 替换 alert 为 Toast 
       } else {
         console.error('Failed to like article:', response.status);
+        showError('Failed to like article'); // 添加错误提示
       }
     } catch (error) {
       console.error('Error liking article:', error);
+      showError('Error liking article'); // 添加错误提示
     }
   }
 </script>
