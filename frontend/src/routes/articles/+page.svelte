@@ -18,6 +18,10 @@
   let selectedTag = ''; // 选中的标签
   let availableTags = []; // 所有可用标签
 
+  // 分页状态
+  let currentPage = 1;
+  let pageSize = 6; // 每页显示6篇文章
+
   // 搜索防抖定时器
   let searchTimeout;
 
@@ -165,8 +169,45 @@
     return `http://localhost:3000${url}`;
   }
 
-  // 准备显示的文章卡片数据
-  $: articleCards = displayedArticles.map(article => ({
+  // 计算总页数
+  $: totalPages = Math.ceil(displayedArticles.length / pageSize);
+
+  // 当筛选条件变化时，重置到第一页
+  $: if (searchKeyword !== undefined || selectedTag !== undefined || sortBy || sortOrder) {
+    if (currentPage > totalPages && totalPages > 0) {
+      currentPage = 1;
+    }
+  }
+
+  // 分页导航函数
+  function goToPage(page) {
+    if (page >= 1 && page <= totalPages) {
+      currentPage = page;
+      // 滚动到页面顶部
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  function nextPage() {
+    if (currentPage < totalPages) {
+      goToPage(currentPage + 1);
+    }
+  }
+
+  function prevPage() {
+    if (currentPage > 1) {
+      goToPage(currentPage - 1);
+    }
+  }
+
+  // 计算当前页显示的文章
+  $: paginatedArticles = displayedArticles.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  // 准备显示的文章卡片数据（使用分页后的文章）
+  $: articleCards = paginatedArticles.map(article => ({
     id: article.id,
     avatar: getImageUrl(article.headerUrl),
     title: article.title,
@@ -304,6 +345,57 @@
         </div>
       {/each}
     </div>
+
+    <!-- 分页导航 -->
+    {#if totalPages > 1}
+      <div class="pagination">
+        <button 
+          class="pagination-btn"
+          class:disabled={currentPage === 1}
+          on:click={prevPage}
+          disabled={currentPage === 1}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Previous
+        </button>
+
+        <div class="pagination-pages">
+          {#each Array(totalPages) as _, i}
+            {#if i + 1 === 1 || i + 1 === totalPages || (i + 1 >= currentPage - 1 && i + 1 <= currentPage + 1)}
+              <button
+                class="pagination-number"
+                class:active={currentPage === i + 1}
+                on:click={() => goToPage(i + 1)}
+              >
+                {i + 1}
+              </button>
+            {:else if i + 1 === currentPage - 2 || i + 1 === currentPage + 2}
+              <span class="pagination-ellipsis">...</span>
+            {/if}
+          {/each}
+        </div>
+
+        <button 
+          class="pagination-btn"
+          class:disabled={currentPage === totalPages}
+          on:click={nextPage}
+          disabled={currentPage === totalPages}
+        >
+          Next
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div style="text-align: center; width: 100%;">
+        <div class="pagination-info">
+          Showing {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, displayedArticles.length)} of {displayedArticles.length} articles
+        </div>
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -695,5 +787,172 @@
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.1);
     color: #e2e8f0;
+  }
+
+  /* 分页样式 */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 3rem;
+    padding: 2rem 0;
+    background: linear-gradient(to bottom, transparent, rgba(102, 126, 234, 0.03));
+    border-radius: 12px;
+  }
+
+  .pagination-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+  }
+
+  .pagination-btn:hover:not(.disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  .pagination-btn:active:not(.disabled) {
+    transform: translateY(-1px);
+  }
+
+  .pagination-btn.disabled {
+    background: linear-gradient(135deg, #cbd5e0 0%, #a0aec0 100%);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .pagination-pages {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .pagination-number {
+    min-width: 44px;
+    height: 44px;
+    padding: 0.5rem;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .pagination-number:hover {
+    background: #f7fafc;
+    border-color: #667eea;
+    color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  }
+
+  .pagination-number.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  }
+
+  .pagination-ellipsis {
+    padding: 0 0.75rem;
+    color: #a0aec0;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .pagination-info {
+    text-align: center;
+    color: #718096;
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-top: 1.25rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 8px;
+    display: inline-block;
+  }
+
+  /* 分页响应式 */
+  @media (max-width: 768px) {
+    .pagination {
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .pagination-btn {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+    }
+
+    .pagination-number {
+      min-width: 36px;
+      height: 36px;
+      font-size: 0.875rem;
+    }
+
+    .pagination-info {
+      width: 100%;
+      margin-top: 1rem;
+    }
+  }
+
+  /* 深色模式分页 */
+  [data-theme="dark"] .pagination {
+    background: linear-gradient(to bottom, transparent, rgba(102, 126, 234, 0.08));
+  }
+
+  [data-theme="dark"] .pagination-btn {
+    /* 保持渐变色，深色模式下依然好看 */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+  }
+
+  [data-theme="dark"] .pagination-btn.disabled {
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  }
+
+  [data-theme="dark"] .pagination-number {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  [data-theme="dark"] .pagination-number:hover {
+    background: #4a5568;
+    border-color: #667eea;
+    color: #a3bffa;
+  }
+
+  [data-theme="dark"] .pagination-number.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: white;
+  }
+
+  [data-theme="dark"] .pagination-ellipsis {
+    color: #718096;
+  }
+
+  [data-theme="dark"] .pagination-info {
+    color: #cbd5e0;
+    background: rgba(102, 126, 234, 0.12);
   }
 </style>
