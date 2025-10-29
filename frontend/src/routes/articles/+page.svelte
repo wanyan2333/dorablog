@@ -4,6 +4,7 @@
   import { goto } from '$app/navigation';
   import { getArticles } from '$lib/api.js';
   import ArticleCard from '$lib/components/ArticleCard.svelte';
+  import { userStore } from '$lib/session.js';
 
   // 文章数据
   let allArticles = [];
@@ -17,6 +18,7 @@
   let sortOrder = 'desc'; // 'asc' or 'desc'
   let selectedTag = ''; // 选中的标签
   let availableTags = []; // 所有可用标签
+  let showMyLikes = false; // 是否只显示我点赞的文章
 
   // 分页状态
   let currentPage = 1;
@@ -24,6 +26,9 @@
 
   // 搜索防抖定时器
   let searchTimeout;
+  
+  // 用户登录状态
+  $: isLoggedIn = $userStore !== null;
 
   // 加载所有文章和标签
   onMount(async () => {
@@ -43,19 +48,35 @@
     }
   }
 
-  // 加载文章（支持标签筛选）
+  // 加载文章（支持标签筛选和"我的点赞"筛选）
   async function loadArticles() {
     try {
       loading = true;
       error = null;
       
-      // 构建URL，如果有选中的标签，添加tag参数
       let url = 'http://localhost:3000/api/articles';
-      if (selectedTag) {
+      
+      // 如果显示"我的点赞"
+      if (showMyLikes) {
+        url = 'http://localhost:3000/api/articles/liked';
+      } else if (selectedTag) {
+        // 否则如果有选中的标签，添加tag参数
         url += `?tag=${encodeURIComponent(selectedTag)}`;
       }
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        credentials: 'include' // 添加认证信息（用于"我的点赞"）
+      });
+      
+      if (!response.ok && showMyLikes && response.status === 401) {
+        // 未登录时访问"我的点赞"
+        error = 'Please log in to view your liked articles.';
+        allArticles = [];
+        displayedArticles = [];
+        loading = false;
+        return;
+      }
+      
       const articles = await response.json();
       
       // 处理文章数据
@@ -111,6 +132,15 @@
   // 标签筛选变化时重新加载文章
   async function handleTagChange() {
     searchKeyword = ''; // 清空搜索框
+    showMyLikes = false; // 关闭"我的点赞"筛选
+    await loadArticles();
+  }
+  
+  // 切换"我的点赞"筛选
+  async function toggleMyLikes() {
+    showMyLikes = !showMyLikes;
+    searchKeyword = ''; // 清空搜索框
+    selectedTag = ''; // 清空标签筛选
     await loadArticles();
   }
 
@@ -227,26 +257,21 @@
 
   <!-- 搜索和排序控制栏 -->
   <div class="controls-bar">
-    <!-- 搜索框 -->
-    <div class="search-container">
-      <div class="search-input-wrapper">
-        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" 
+    <!-- 我的点赞按钮（最左边） -->
+    {#if isLoggedIn}
+      <button 
+        class="my-likes-btn" 
+        class:active={showMyLikes}
+        on:click={toggleMyLikes}
+        title={showMyLikes ? "Show all articles" : "Show my liked articles"}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill={showMyLikes ? "currentColor" : "none"}>
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" 
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <input
-          type="text"
-          bind:value={searchKeyword}
-          placeholder="Search articles by title, content, or author..."
-          class="search-input"
-        />
-        {#if searchKeyword}
-          <button class="clear-btn" on:click={() => searchKeyword = ''} aria-label="Clear search">
-            ×
-          </button>
-        {/if}
-      </div>
-    </div>
+        {showMyLikes ? 'My Likes' : 'My Likes'}
+      </button>
+    {/if}
 
     <!-- 标签筛选 -->
     <div class="filter-container">
@@ -262,6 +287,7 @@
         bind:value={selectedTag} 
         on:change={handleTagChange}
         class="tag-select"
+        disabled={showMyLikes}
       >
         <option value="">All Tags</option>
         {#each availableTags as tag}
@@ -296,11 +322,35 @@
         {/if}
       </button>
     </div>
+
+    <!-- 搜索框（最右边） -->
+    <div class="search-container">
+      <div class="search-input-wrapper">
+        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" 
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <input
+          type="text"
+          bind:value={searchKeyword}
+          placeholder="Search articles..."
+          class="search-input"
+          disabled={showMyLikes}
+        />
+        {#if searchKeyword}
+          <button class="clear-btn" on:click={() => searchKeyword = ''} aria-label="Clear search">
+            ×
+          </button>
+        {/if}
+      </div>
+    </div>
   </div>
 
   <!-- 结果信息 -->
   <div class="results-info">
-    {#if searchKeyword && selectedTag}
+    {#if showMyLikes}
+      <p>Showing <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} you liked ❤️</p>
+    {:else if searchKeyword && selectedTag}
       <p>Found <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} in tag "<em>{selectedTag}</em>" matching "<em>{searchKeyword}</em>"</p>
     {:else if searchKeyword}
       <p>Found <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} matching "<em>{searchKeyword}</em>"</p>
@@ -602,6 +652,57 @@
     transform: translateY(-1px);
   }
 
+  /* 我的点赞按钮 */
+  .my-likes-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    color: #667eea;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    white-space: nowrap;
+  }
+
+  .my-likes-btn svg {
+    transition: all 0.3s ease;
+  }
+
+  .my-likes-btn:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .my-likes-btn:hover svg {
+    fill: white;
+  }
+
+  .my-likes-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: white;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  }
+
+  .my-likes-btn.active svg {
+    fill: white;
+    animation: heartbeat 1.5s ease infinite;
+  }
+
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    10%, 30% { transform: scale(1.1); }
+    20%, 40% { transform: scale(0.95); }
+  }
  
 /* 结果信息 */
 .results-info {

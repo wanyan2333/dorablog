@@ -425,3 +425,43 @@ export async function getAllTags() {
   return tags;
 }
 
+/**
+ * Gets all articles liked by a specific user
+ * @param {number} userId - User ID
+ * @returns {Promise<Array>} Array of articles liked by the user
+ */
+export async function getLikedArticlesByUser(userId) {
+  const db = await getDatabase();
+  const articles = await db.all(`
+    SELECT 
+      Articles.*,
+      Users.username as author,
+      Users.realname as authorRealName,
+      Users.avatarUrl as authorAvatar,
+      IFNULL(like_stats.likeCount, 0) as likeCount,
+      IFNULL(comment_stats.commentCount, 0) as commentCount
+    FROM Articles 
+    INNER JOIN ArticleLike ON Articles.id = ArticleLike.articleId
+    LEFT JOIN Users ON Articles.userId = Users.id 
+    LEFT JOIN (
+      SELECT articleId, COUNT(*) as likeCount 
+      FROM ArticleLike 
+      GROUP BY articleId
+    ) like_stats ON Articles.id = like_stats.articleId
+    LEFT JOIN (
+      SELECT articleId, COUNT(*) as commentCount 
+      FROM Comments 
+      GROUP BY articleId
+    ) comment_stats ON Articles.id = comment_stats.articleId
+    WHERE ArticleLike.userId = ?
+    ORDER BY Articles.date DESC
+  `, userId);
+  
+  // Ensure commentCount is never null
+  articles.forEach(article => {
+    article.commentCount = article.commentCount || 0;
+  });
+  
+  return articles;
+}
+
