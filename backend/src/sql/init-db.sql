@@ -322,15 +322,15 @@ INSERT INTO ArticleLike (articleId, userId) VALUES
     (10, 9),
     (10, 10);
 
--- Dummy article-tag relations (简化标签系统，5-6个主要标签)
+-- Dummy article-tag relations (每篇文章只有一个标签，使用新建文章页定义的6个标签)
 INSERT INTO ArticleTag (articleId, tag, color) VALUES
-    (1, 'Technology', 'blue'),
-    (2, 'Lifestyle', 'green'),
-    (3, 'Health', 'red'),
-    (4, 'Travel', 'orange'),
-    (5, 'Technology', 'blue'),
-    (6, 'Technology', 'blue'),
-    (7, 'Lifestyle', 'green'),
-    (8, 'Health', 'red'),
-    (9, 'Health', 'red'),
-    (10, 'Technology', 'blue');
+    (1, 'Technology', 'blue'),      -- Article 1: Getting Started with Web Development
+    (2, 'Entertainment', 'pink'),   -- Article 2: The Art of Photography
+    (3, 'Health', 'red'),           -- Article 3: Healthy Living
+    (4, 'Travel', 'orange'),        -- Article 4: Travel Adventures in Asia
+    (5, 'Technology', 'blue'),      -- Article 5: Mastering JavaScript
+    (6, 'Technology', 'blue'),      -- Article 6: The Future of AI
+    (7, 'Lifestyle', 'green'),      -- Article 7: Cooking Basics
+    (8, 'News', 'gray'),            -- Article 8: Sustainable Living
+    (9, 'Health', 'red'),           -- Article 9: Fitness Journey
+    (10, 'Technology', 'blue');     -- Article 10: Digital Marketing

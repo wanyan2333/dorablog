@@ -11,24 +11,48 @@
   let loading = true;
   let error = null;
 
-  // 搜索和排序状态
+  // 搜索、排序和筛选状态
   let searchKeyword = '';
   let sortBy = 'date'; // 'date', 'title', 'username'
   let sortOrder = 'desc'; // 'asc' or 'desc'
+  let selectedTag = ''; // 选中的标签
+  let availableTags = []; // 所有可用标签
 
   // 搜索防抖定时器
   let searchTimeout;
 
-  // 加载所有文章
+  // 加载所有文章和标签
   onMount(async () => {
+    await loadTags();
     await loadArticles();
   });
 
+  // 加载所有标签
+  async function loadTags() {
+    try {
+      const response = await fetch('http://localhost:3000/api/articles/tags');
+      if (response.ok) {
+        availableTags = await response.json();
+      }
+    } catch (err) {
+      console.error('Error loading tags:', err);
+    }
+  }
+
+  // 加载文章（支持标签筛选）
   async function loadArticles() {
     try {
       loading = true;
       error = null;
-      const articles = await getArticles();
+      
+      // 构建URL，如果有选中的标签，添加tag参数
+      let url = 'http://localhost:3000/api/articles';
+      if (selectedTag) {
+        url += `?tag=${encodeURIComponent(selectedTag)}`;
+      }
+      
+      const response = await fetch(url);
+      const articles = await response.json();
       
       // 处理文章数据
       allArticles = articles.map(article => ({
@@ -54,40 +78,36 @@
     }
   }
 
-  // 搜索功能（使用后端API进行不区分大小写的搜索）
+  // 搜索功能（在已筛选的文章中搜索）
   async function performSearch() {
-    if (!searchKeyword.trim()) {
-      // 如果搜索框为空，显示所有文章
-      displayedArticles = [...allArticles];
-      sortArticles();
+    if (!searchKeyword.trim() && !selectedTag) {
+      // 如果搜索框为空且没有选标签，重新加载所有文章
+      await loadArticles();
       return;
     }
 
-    try {
-      loading = true;
-      const response = await fetch(`http://localhost:3000/api/articles/search?keyword=${encodeURIComponent(searchKeyword)}`);
-      
-      if (response.ok) {
-        const results = await response.json();
-        displayedArticles = results.map(article => ({
-          id: article.id,
-          title: article.title,
-          content: article.content,
-          author: article.authorRealName || article.authorUsername || 'Unknown',
-          authorUsername: article.authorUsername,
-          authorAvatar: article.authorAvatar || '/avatars/doraemon1.png',
-          date: article.date,
-          headerUrl: article.headerUrl,
-          likes: article.likeCount || 0,
-          comments: 0
-        }));
-        sortArticles();
-      }
-      loading = false;
-    } catch (err) {
-      console.error('Search error:', err);
-      loading = false;
+    if (!searchKeyword.trim()) {
+      // 如果只有标签筛选，没有搜索关键词，重新加载该标签的文章
+      await loadArticles();
+      return;
     }
+
+    // 如果有搜索关键词，在当前显示的文章中进行客户端搜索
+    // 这样可以叠加标签筛选和搜索功能
+    const keyword = searchKeyword.toLowerCase();
+    displayedArticles = allArticles.filter(article => {
+      return article.title.toLowerCase().includes(keyword) ||
+             article.content.toLowerCase().includes(keyword) ||
+             article.author.toLowerCase().includes(keyword) ||
+             (article.authorUsername && article.authorUsername.toLowerCase().includes(keyword));
+    });
+    sortArticles();
+  }
+  
+  // 标签筛选变化时重新加载文章
+  async function handleTagChange() {
+    searchKeyword = ''; // 清空搜索框
+    await loadArticles();
   }
 
   // 排序功能
@@ -187,6 +207,28 @@
       </div>
     </div>
 
+    <!-- 标签筛选 -->
+    <div class="filter-container">
+      <label for="tag-filter" class="filter-label">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 4px;">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="7" y1="7" x2="7.01" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Tag:
+      </label>
+      <select 
+        id="tag-filter" 
+        bind:value={selectedTag} 
+        on:change={handleTagChange}
+        class="tag-select"
+      >
+        <option value="">All Tags</option>
+        {#each availableTags as tag}
+          <option value={tag.tag}>{tag.tag} ({tag.count})</option>
+        {/each}
+      </select>
+    </div>
+
     <!-- 排序控制 -->
     <div class="sort-container">
       <label for="sort-by" class="sort-label">Sort by:</label>
@@ -217,8 +259,12 @@
 
   <!-- 结果信息 -->
   <div class="results-info">
-    {#if searchKeyword}
+    {#if searchKeyword && selectedTag}
+      <p>Found <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} in tag "<em>{selectedTag}</em>" matching "<em>{searchKeyword}</em>"</p>
+    {:else if searchKeyword}
       <p>Found <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} matching "<em>{searchKeyword}</em>"</p>
+    {:else if selectedTag}
+      <p>Showing <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} in tag "<em>{selectedTag}</em>"</p>
     {:else}
       <p>Showing <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''}</p>
     {/if}
@@ -360,6 +406,54 @@
   .clear-btn:hover {
     background: #d0d6dd;
     transform: scale(1.1);
+  }
+
+  /* 标签筛选控制 */
+  .filter-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    border: 2px solid #e0e6ed;
+    transition: all 0.3s ease;
+  }
+
+  .filter-container:focus-within {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .filter-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4a5568;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .tag-select {
+    padding: 0.4rem 0.75rem;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #2d3748;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 140px;
+  }
+
+  .tag-select:hover {
+    border-color: #667eea;
+  }
+
+  .tag-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
   }
 
   /* 排序控制 */

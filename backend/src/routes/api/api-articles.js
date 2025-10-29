@@ -1,7 +1,7 @@
 import express from "express";
 import { requireAuth } from "../../middleware/auth.js";
 import { requiresAuthentication } from "../../middleware/auth-middleware.js";
-import { getAllArticles, getArticleById, getArticlesByUserId, getLikedUsers, searchArticles, toggleArticleLike, createArticle, getRecommendedArticles } from "../../data/articles-dao.js";
+import { getAllArticles, getArticleById, getArticlesByUserId, getLikedUsers, searchArticles, toggleArticleLike, createArticle, getRecommendedArticles, getAllTags } from "../../data/articles-dao.js";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -42,13 +42,28 @@ const upload = multer({
 
 /**
  * Sending a GET request to /api/articles/ will return an array of all articles in the system.
+ * Optionally filter by tag using query parameter: ?tag=Technology
  */
 router.get("/", async (req, res) => {
   try {
-    const articles = await getAllArticles();
+    const tag = req.query.tag || null;
+    const articles = await getAllArticles(tag);
     return res.status(200).json(articles);
   } catch (error) {
     console.error("Error getting articles:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+/**
+ * Sending a GET request to /api/articles/tags will return all unique tags with their usage count
+ */
+router.get("/tags", async (req, res) => {
+  try {
+    const tags = await getAllTags();
+    return res.status(200).json(tags);
+  } catch (error) {
+    console.error("Error getting tags:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 });
