@@ -4,6 +4,7 @@
   import { goto } from '$app/navigation';
   import { getArticles } from '$lib/api.js';
   import ArticleCard from '$lib/components/ArticleCard.svelte';
+  import { userStore } from '$lib/session.js';
 
   // 文章数据
   let allArticles = [];
@@ -11,24 +12,72 @@
   let loading = true;
   let error = null;
 
-  // 搜索和排序状态
+  // 搜索、排序和筛选状态
   let searchKeyword = '';
   let sortBy = 'date'; // 'date', 'title', 'username'
   let sortOrder = 'desc'; // 'asc' or 'desc'
+  let selectedTag = ''; // 选中的标签
+  let availableTags = []; // 所有可用标签
+  let showMyLikes = false; // 是否只显示我点赞的文章
+
+  // 分页状态
+  let currentPage = 1;
+  let pageSize = 6; // 每页显示6篇文章
 
   // 搜索防抖定时器
   let searchTimeout;
+  
+  // 用户登录状态
+  $: isLoggedIn = $userStore !== null;
 
-  // 加载所有文章
+  // 加载所有文章和标签
   onMount(async () => {
+    await loadTags();
     await loadArticles();
   });
 
+  // 加载所有标签
+  async function loadTags() {
+    try {
+      const response = await fetch('http://localhost:3000/api/articles/tags');
+      if (response.ok) {
+        availableTags = await response.json();
+      }
+    } catch (err) {
+      console.error('Error loading tags:', err);
+    }
+  }
+
+  // 加载文章（支持标签筛选和"我的点赞"筛选）
   async function loadArticles() {
     try {
       loading = true;
       error = null;
-      const articles = await getArticles();
+      
+      let url = 'http://localhost:3000/api/articles';
+      
+      // 如果显示"我的点赞"
+      if (showMyLikes) {
+        url = 'http://localhost:3000/api/articles/liked';
+      } else if (selectedTag) {
+        // 否则如果有选中的标签，添加tag参数
+        url += `?tag=${encodeURIComponent(selectedTag)}`;
+      }
+      
+      const response = await fetch(url, {
+        credentials: 'include' // 添加认证信息（用于"我的点赞"）
+      });
+      
+      if (!response.ok && showMyLikes && response.status === 401) {
+        // 未登录时访问"我的点赞"
+        error = 'Please log in to view your liked articles.';
+        allArticles = [];
+        displayedArticles = [];
+        loading = false;
+        return;
+      }
+      
+      const articles = await response.json();
       
       // 处理文章数据
       allArticles = articles.map(article => ({
@@ -54,40 +103,45 @@
     }
   }
 
-  // 搜索功能（使用后端API进行不区分大小写的搜索）
+  // 搜索功能（在已筛选的文章中搜索）
   async function performSearch() {
-    if (!searchKeyword.trim()) {
-      // 如果搜索框为空，显示所有文章
-      displayedArticles = [...allArticles];
-      sortArticles();
+    if (!searchKeyword.trim() && !selectedTag) {
+      // 如果搜索框为空且没有选标签，重新加载所有文章
+      await loadArticles();
       return;
     }
 
-    try {
-      loading = true;
-      const response = await fetch(`http://localhost:3000/api/articles/search?keyword=${encodeURIComponent(searchKeyword)}`);
-      
-      if (response.ok) {
-        const results = await response.json();
-        displayedArticles = results.map(article => ({
-          id: article.id,
-          title: article.title,
-          content: article.content,
-          author: article.authorRealName || article.authorUsername || 'Unknown',
-          authorUsername: article.authorUsername,
-          authorAvatar: article.authorAvatar || '/avatars/doraemon1.png',
-          date: article.date,
-          headerUrl: article.headerUrl,
-          likes: article.likeCount || 0,
-          comments: 0
-        }));
-        sortArticles();
-      }
-      loading = false;
-    } catch (err) {
-      console.error('Search error:', err);
-      loading = false;
+    if (!searchKeyword.trim()) {
+      // 如果只有标签筛选，没有搜索关键词，重新加载该标签的文章
+      await loadArticles();
+      return;
     }
+
+    // 如果有搜索关键词，在当前显示的文章中进行客户端搜索
+    // 这样可以叠加标签筛选和搜索功能
+    const keyword = searchKeyword.toLowerCase();
+    displayedArticles = allArticles.filter(article => {
+      return article.title.toLowerCase().includes(keyword) ||
+             article.content.toLowerCase().includes(keyword) ||
+             article.author.toLowerCase().includes(keyword) ||
+             (article.authorUsername && article.authorUsername.toLowerCase().includes(keyword));
+    });
+    sortArticles();
+  }
+  
+  // 标签筛选变化时重新加载文章
+  async function handleTagChange() {
+    searchKeyword = ''; // 清空搜索框
+    showMyLikes = false; // 关闭"我的点赞"筛选
+    await loadArticles();
+  }
+  
+  // 切换"我的点赞"筛选
+  async function toggleMyLikes() {
+    showMyLikes = !showMyLikes;
+    searchKeyword = ''; // 清空搜索框
+    selectedTag = ''; // 清空标签筛选
+    await loadArticles();
   }
 
   // 排序功能
@@ -145,8 +199,45 @@
     return `http://localhost:3000${url}`;
   }
 
-  // 准备显示的文章卡片数据
-  $: articleCards = displayedArticles.map(article => ({
+  // 计算总页数
+  $: totalPages = Math.ceil(displayedArticles.length / pageSize);
+
+  // 当筛选条件变化时，重置到第一页
+  $: if (searchKeyword !== undefined || selectedTag !== undefined || sortBy || sortOrder) {
+    if (currentPage > totalPages && totalPages > 0) {
+      currentPage = 1;
+    }
+  }
+
+  // 分页导航函数
+  function goToPage(page) {
+    if (page >= 1 && page <= totalPages) {
+      currentPage = page;
+      // 滚动到页面顶部
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  function nextPage() {
+    if (currentPage < totalPages) {
+      goToPage(currentPage + 1);
+    }
+  }
+
+  function prevPage() {
+    if (currentPage > 1) {
+      goToPage(currentPage - 1);
+    }
+  }
+
+  // 计算当前页显示的文章
+  $: paginatedArticles = displayedArticles.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  // 准备显示的文章卡片数据（使用分页后的文章）
+  $: articleCards = paginatedArticles.map(article => ({
     id: article.id,
     avatar: getImageUrl(article.headerUrl),
     title: article.title,
@@ -166,25 +257,43 @@
 
   <!-- 搜索和排序控制栏 -->
   <div class="controls-bar">
-    <!-- 搜索框 -->
-    <div class="search-container">
-      <div class="search-input-wrapper">
-        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" 
+    <!-- 我的点赞按钮（最左边） -->
+    {#if isLoggedIn}
+      <button 
+        class="my-likes-btn" 
+        class:active={showMyLikes}
+        on:click={toggleMyLikes}
+        title={showMyLikes ? "Show all articles" : "Show my liked articles"}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill={showMyLikes ? "currentColor" : "none"}>
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" 
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <input
-          type="text"
-          bind:value={searchKeyword}
-          placeholder="Search articles by title, content, or author..."
-          class="search-input"
-        />
-        {#if searchKeyword}
-          <button class="clear-btn" on:click={() => searchKeyword = ''} aria-label="Clear search">
-            ×
-          </button>
-        {/if}
-      </div>
+        {showMyLikes ? 'My Likes' : 'My Likes'}
+      </button>
+    {/if}
+
+    <!-- 标签筛选 -->
+    <div class="filter-container">
+      <label for="tag-filter" class="filter-label">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 4px;">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="7" y1="7" x2="7.01" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        Tag:
+      </label>
+      <select 
+        id="tag-filter" 
+        bind:value={selectedTag} 
+        on:change={handleTagChange}
+        class="tag-select"
+        disabled={showMyLikes}
+      >
+        <option value="">All Tags</option>
+        {#each availableTags as tag}
+          <option value={tag.tag}>{tag.tag} ({tag.count})</option>
+        {/each}
+      </select>
     </div>
 
     <!-- 排序控制 -->
@@ -213,12 +322,40 @@
         {/if}
       </button>
     </div>
+
+    <!-- 搜索框（最右边） -->
+    <div class="search-container">
+      <div class="search-input-wrapper">
+        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" 
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <input
+          type="text"
+          bind:value={searchKeyword}
+          placeholder="Search articles..."
+          class="search-input"
+          disabled={showMyLikes}
+        />
+        {#if searchKeyword}
+          <button class="clear-btn" on:click={() => searchKeyword = ''} aria-label="Clear search">
+            ×
+          </button>
+        {/if}
+      </div>
+    </div>
   </div>
 
   <!-- 结果信息 -->
   <div class="results-info">
-    {#if searchKeyword}
+    {#if showMyLikes}
+      <p>Showing <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} you liked ❤️</p>
+    {:else if searchKeyword && selectedTag}
+      <p>Found <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} in tag "<em>{selectedTag}</em>" matching "<em>{searchKeyword}</em>"</p>
+    {:else if searchKeyword}
       <p>Found <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} matching "<em>{searchKeyword}</em>"</p>
+    {:else if selectedTag}
+      <p>Showing <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} in tag "<em>{selectedTag}</em>"</p>
     {:else}
       <p>Showing <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''}</p>
     {/if}
@@ -258,6 +395,57 @@
         </div>
       {/each}
     </div>
+
+    <!-- 分页导航 -->
+    {#if totalPages > 1}
+      <div class="pagination">
+        <button 
+          class="pagination-btn"
+          class:disabled={currentPage === 1}
+          on:click={prevPage}
+          disabled={currentPage === 1}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Previous
+        </button>
+
+        <div class="pagination-pages">
+          {#each Array(totalPages) as _, i}
+            {#if i + 1 === 1 || i + 1 === totalPages || (i + 1 >= currentPage - 1 && i + 1 <= currentPage + 1)}
+              <button
+                class="pagination-number"
+                class:active={currentPage === i + 1}
+                on:click={() => goToPage(i + 1)}
+              >
+                {i + 1}
+              </button>
+            {:else if i + 1 === currentPage - 2 || i + 1 === currentPage + 2}
+              <span class="pagination-ellipsis">...</span>
+            {/if}
+          {/each}
+        </div>
+
+        <button 
+          class="pagination-btn"
+          class:disabled={currentPage === totalPages}
+          on:click={nextPage}
+          disabled={currentPage === totalPages}
+        >
+          Next
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div style="text-align: center; width: 100%;">
+        <div class="pagination-info">
+          Showing {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, displayedArticles.length)} of {displayedArticles.length} articles
+        </div>
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -362,6 +550,54 @@
     transform: scale(1.1);
   }
 
+  /* 标签筛选控制 */
+  .filter-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    border: 2px solid #e0e6ed;
+    transition: all 0.3s ease;
+  }
+
+  .filter-container:focus-within {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .filter-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4a5568;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .tag-select {
+    padding: 0.4rem 0.75rem;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #2d3748;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 140px;
+  }
+
+  .tag-select:hover {
+    border-color: #667eea;
+  }
+
+  .tag-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+  }
+
   /* 排序控制 */
   .sort-container {
     display: flex;
@@ -416,6 +652,57 @@
     transform: translateY(-1px);
   }
 
+  /* 我的点赞按钮 */
+  .my-likes-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    color: #667eea;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    white-space: nowrap;
+  }
+
+  .my-likes-btn svg {
+    transition: all 0.3s ease;
+  }
+
+  .my-likes-btn:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .my-likes-btn:hover svg {
+    fill: white;
+  }
+
+  .my-likes-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: white;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  }
+
+  .my-likes-btn.active svg {
+    fill: white;
+    animation: heartbeat 1.5s ease infinite;
+  }
+
+  @keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    10%, 30% { transform: scale(1.1); }
+    20%, 40% { transform: scale(0.95); }
+  }
  
 /* 结果信息 */
 .results-info {
@@ -601,5 +888,172 @@
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.1);
     color: #e2e8f0;
+  }
+
+  /* 分页样式 */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 3rem;
+    padding: 2rem 0;
+    background: linear-gradient(to bottom, transparent, rgba(102, 126, 234, 0.03));
+    border-radius: 12px;
+  }
+
+  .pagination-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+  }
+
+  .pagination-btn:hover:not(.disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  .pagination-btn:active:not(.disabled) {
+    transform: translateY(-1px);
+  }
+
+  .pagination-btn.disabled {
+    background: linear-gradient(135deg, #cbd5e0 0%, #a0aec0 100%);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .pagination-pages {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .pagination-number {
+    min-width: 44px;
+    height: 44px;
+    padding: 0.5rem;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .pagination-number:hover {
+    background: #f7fafc;
+    border-color: #667eea;
+    color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  }
+
+  .pagination-number.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  }
+
+  .pagination-ellipsis {
+    padding: 0 0.75rem;
+    color: #a0aec0;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .pagination-info {
+    text-align: center;
+    color: #718096;
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-top: 1.25rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 8px;
+    display: inline-block;
+  }
+
+  /* 分页响应式 */
+  @media (max-width: 768px) {
+    .pagination {
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .pagination-btn {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.875rem;
+    }
+
+    .pagination-number {
+      min-width: 36px;
+      height: 36px;
+      font-size: 0.875rem;
+    }
+
+    .pagination-info {
+      width: 100%;
+      margin-top: 1rem;
+    }
+  }
+
+  /* 深色模式分页 */
+  [data-theme="dark"] .pagination {
+    background: linear-gradient(to bottom, transparent, rgba(102, 126, 234, 0.08));
+  }
+
+  [data-theme="dark"] .pagination-btn {
+    /* 保持渐变色，深色模式下依然好看 */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+  }
+
+  [data-theme="dark"] .pagination-btn.disabled {
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  }
+
+  [data-theme="dark"] .pagination-number {
+    background: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  [data-theme="dark"] .pagination-number:hover {
+    background: #4a5568;
+    border-color: #667eea;
+    color: #a3bffa;
+  }
+
+  [data-theme="dark"] .pagination-number.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: white;
+  }
+
+  [data-theme="dark"] .pagination-ellipsis {
+    color: #718096;
+  }
+
+  [data-theme="dark"] .pagination-info {
+    color: #cbd5e0;
+    background: rgba(102, 126, 234, 0.12);
   }
 </style>

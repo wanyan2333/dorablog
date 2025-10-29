@@ -2,12 +2,15 @@ import { getDatabase } from "./database.js";
 
 /**
  * Gets all articles in the database with user information.
+ * Optionally filters by tag.
  * 
+ * @param {string} tag - Optional tag to filter articles by
  * @returns array of article objects with user data
  */
-export async function getAllArticles() {
+export async function getAllArticles(tag = null) {
   const db = await getDatabase();
-  const articles = await db.all(`
+  
+  let query = `
     SELECT 
       Articles.*,
       Users.username as author,
@@ -27,8 +30,22 @@ export async function getAllArticles() {
       FROM Comments 
       GROUP BY articleId
     ) comment_stats ON Articles.id = comment_stats.articleId
-    ORDER BY Articles.date DESC
-  `);
+  `;
+  
+  const params = [];
+  
+  // If tag is specified, add JOIN and WHERE clause
+  if (tag) {
+    query += `
+    INNER JOIN ArticleTag ON Articles.id = ArticleTag.articleId
+    WHERE ArticleTag.tag = ?
+    `;
+    params.push(tag);
+  }
+  
+  query += ` ORDER BY Articles.date DESC`;
+  
+  const articles = await db.all(query, ...params);
   
   // Ensure commentCount is never null
   articles.forEach(article => {
@@ -374,6 +391,7 @@ export async function getRecommendedArticles(articleId, limit = 5) {
 
 /**
  * Gets the color for a tag (simple color assignment)
+ * 只包含新建文章页定义的6个标签
  * @param {string} tag - The tag name
  * @returns {string} The color for the tag
  */
@@ -382,15 +400,68 @@ function getTagColor(tag) {
     'Technology': 'blue',
     'Lifestyle': 'green', 
     'Travel': 'orange',
-    'Game': 'purple',
     'Health': 'red',
-    'Food': 'yellow',
-    'Education': 'cyan',
     'Entertainment': 'pink',
-    'Sports': 'magenta',
     'News': 'gray'
   };
   return colors[tag] || 'gray';
 }
 
+/**
+ * Gets all unique tags used in articles
+ * @returns {Promise<Array<{tag: string, color: string, count: number}>>} Array of tag objects with their colors and usage count
+ */
+export async function getAllTags() {
+  const db = await getDatabase();
+  const tags = await db.all(`
+    SELECT 
+      tag, 
+      color,
+      COUNT(*) as count
+    FROM ArticleTag 
+    GROUP BY tag, color
+    ORDER BY count DESC, tag ASC
+  `);
+  return tags;
+}
+
+/**
+ * Gets all articles liked by a specific user
+ * @param {number} userId - User ID
+ * @returns {Promise<Array>} Array of articles liked by the user
+ */
+export async function getLikedArticlesByUser(userId) {
+  const db = await getDatabase();
+  const articles = await db.all(`
+    SELECT 
+      Articles.*,
+      Users.username as author,
+      Users.realname as authorRealName,
+      Users.avatarUrl as authorAvatar,
+      IFNULL(like_stats.likeCount, 0) as likeCount,
+      IFNULL(comment_stats.commentCount, 0) as commentCount
+    FROM Articles 
+    INNER JOIN ArticleLike ON Articles.id = ArticleLike.articleId
+    LEFT JOIN Users ON Articles.userId = Users.id 
+    LEFT JOIN (
+      SELECT articleId, COUNT(*) as likeCount 
+      FROM ArticleLike 
+      GROUP BY articleId
+    ) like_stats ON Articles.id = like_stats.articleId
+    LEFT JOIN (
+      SELECT articleId, COUNT(*) as commentCount 
+      FROM Comments 
+      GROUP BY articleId
+    ) comment_stats ON Articles.id = comment_stats.articleId
+    WHERE ArticleLike.userId = ?
+    ORDER BY Articles.date DESC
+  `, userId);
+  
+  // Ensure commentCount is never null
+  articles.forEach(article => {
+    article.commentCount = article.commentCount || 0;
+  });
+  
+  return articles;
+}
 

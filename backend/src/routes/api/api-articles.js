@@ -1,7 +1,7 @@
 import express from "express";
 import { requireAuth } from "../../middleware/auth.js";
 import { requiresAuthentication } from "../../middleware/auth-middleware.js";
-import { getAllArticles, getArticleById, getArticlesByUserId, getLikedUsers, searchArticles, toggleArticleLike, createArticle, getRecommendedArticles } from "../../data/articles-dao.js";
+import { getAllArticles, getArticleById, getArticlesByUserId, getLikedUsers, searchArticles, toggleArticleLike, createArticle, getRecommendedArticles, getAllTags, getLikedArticlesByUser } from "../../data/articles-dao.js";
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -42,13 +42,43 @@ const upload = multer({
 
 /**
  * Sending a GET request to /api/articles/ will return an array of all articles in the system.
+ * Optionally filter by tag using query parameter: ?tag=Technology
  */
 router.get("/", async (req, res) => {
   try {
-    const articles = await getAllArticles();
+    const tag = req.query.tag || null;
+    const articles = await getAllArticles(tag);
     return res.status(200).json(articles);
   } catch (error) {
     console.error("Error getting articles:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+/**
+ * Sending a GET request to /api/articles/tags will return all unique tags with their usage count
+ */
+router.get("/tags", async (req, res) => {
+  try {
+    const tags = await getAllTags();
+    return res.status(200).json(tags);
+  } catch (error) {
+    console.error("Error getting tags:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+/**
+ * Get all articles liked by the current user
+ * Requires authentication
+ */
+router.get("/liked", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const articles = await getLikedArticlesByUser(userId);
+    return res.status(200).json(articles);
+  } catch (error) {
+    console.error("Error getting liked articles:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -72,13 +102,11 @@ router.get("/search", (req, res) => {
 
 /** 
  * Sending a POST request to /api/articles/like/:id will like or unlike the article with the given id.
- * Temporarily using hardcoded userId for testing without authentication.
+ * Requires authentication.
  */
-router.post("/like/:id", async (req, res) => {
+router.post("/like/:id", requireAuth, async (req, res) => {
     const articleId = req.params.id;
-
-    // TODO: Replace with req.user.id when authentication is enabled
-    const userId = 2; // Hardcoded for testing
+    const userId = req.user.id; // Get from authenticated user
     
     try {
       const result = await toggleArticleLike(articleId, userId);
@@ -98,12 +126,11 @@ router.post("/like/:id", async (req, res) => {
 
 /**
  * Sending a GET request to /api/articles/:id/liked will check if the current user has liked the article.
- * Temporarily using hardcoded userId for testing without authentication.
+ * Requires authentication - must be logged in.
  */
-router.get("/:id/liked", async (req, res) => {
+router.get("/:id/liked", requireAuth, async (req, res) => {
   const articleId = req.params.id;
-  // TODO: Replace with req.user.id when authentication is enabled
-  const userId = 2; // Hardcoded for testing
+  const userId = req.user.id; // 从认证中间件获取用户ID
   
   try {
     const db = await import("../../data/database.js").then(m => m.getDatabase());
