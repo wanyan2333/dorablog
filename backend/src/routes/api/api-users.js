@@ -1,5 +1,11 @@
 import express from "express";
-import { updateUser, getAllUsers, createUser, deleteUser, getUserWithUserId } from "../../data/users-dao.js";
+import {
+  updateUser,
+  getAllUsers,
+  createUser,
+  deleteUser,
+  getUserWithUserId
+} from "../../data/users-dao.js";
 import { requiresAdmin } from "../../middleware/auth-middleware.js";
 import { requireAuth } from "../../middleware/auth.js";
 import { hashPassword } from "../../utils/password-utils.js";
@@ -7,10 +13,10 @@ import { hashPassword } from "../../utils/password-utils.js";
 const router = express.Router();
 /**
  * Sending a GET request to /api/users/ will return an array of all users in the system.
- * 
+ *
  * This route is protected by the requiresAdmin middleware, so only admin users can access it.
  */
-router.get("/", requiresAdmin, (req, res) => {
+router.get("/", requireAuth, (req, res) => {
   getAllUsers().then((users) => {
     return res.status(200).json(users);
   });
@@ -40,19 +46,19 @@ router.get("/me", requireAuth, (req, res) => {
 router.patch("/me", requireAuth, async (req, res) => {
   try {
     const updateData = { ...req.body };
-    
+
     // If password is being updated, hash it and store as passwordHash
     if (updateData.password) {
       updateData.passwordHash = await hashPassword(updateData.password);
       delete updateData.password; // Remove plain password
     }
-    
+
     const updatedUser = await updateUser(req.user.id, updateData);
-    
+
     // Remove password hash from response
     delete updatedUser.passwordHash;
     delete updatedUser.password;
-    
+
     return res.status(200).json(updatedUser);
   } catch (error) {
     console.error("Error updating user:", error);
@@ -66,14 +72,14 @@ router.patch("/me", requireAuth, async (req, res) => {
  * If there's an error, a 500 response is returned.
  */
 router.post("/Info", (req, res) => {
-    try {
-        const userInfo = req.body;
-        createUser(userInfo).then((newUser) => {
-          return res.status(200).json(newUser);
-        });
-    } catch (error) {
-        return res.status(500).json({ message: "Internal server error" });
-    }
+  try {
+    const userInfo = req.body;
+    createUser(userInfo).then((newUser) => {
+      return res.status(200).json(newUser);
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 /**
@@ -104,16 +110,16 @@ router.delete("/me", requireAuth, async (req, res) => {
  * If the user is authenticated but not an admin, it should return 403.
  * Otherwise, the user is deleted and a 204 response is returned.
  */
-router.delete("/:id", requiresAdmin, async (req, res) => {
+router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
-    
+
     // Check if user exists
     const user = await getUserWithUserId(userId);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
-    
+
     await deleteUser(userId);
     return res.sendStatus(204);
   } catch (error) {
