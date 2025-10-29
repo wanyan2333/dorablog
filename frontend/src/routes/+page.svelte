@@ -60,7 +60,7 @@
     }
   });
   
-  // 获取每日一言函数
+  // 获取每日一言函数（保持原有逻辑不变）
   async function fetchDailyQuote() {
     // 重置加载状态
     quoteLoading = true;
@@ -106,8 +106,8 @@
     } catch (err) {
       console.error('获取每日一言失败:', err);
       dailyQuote = {
-        content: '未来属于那些相信自己梦想之美丽的人。',
-        author: '— 埃莉诺·罗斯福'
+        content: 'The future belongs to those who believe in the beauty of their dreams',
+        author: '— -Eleanor Roosevelt'
       };
     } finally {
       quoteLoading = false;
@@ -181,7 +181,27 @@
   justify-content: center;
 }
 
-/* 每日一言部分样式 */
+
+:global(.article-card) {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.60) 0%,
+    rgba(255, 255, 255, 0.42) 100%
+  ) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+}
+
+/* 深色模式：仅替换背景 */
+[data-theme="dark"] :global(.article-card) {
+  background: linear-gradient(
+    180deg,
+    rgba(26, 32, 44, 0.60) 0%,
+    rgba(26, 32, 44, 0.42) 100%
+  ) !important;
+}
+
+/* 每日一言部分样式（仅升级为液态玻璃，保持原有布局） */
 .daily-quote-section {
   display: flex;
   justify-content: center;
@@ -191,23 +211,28 @@
 
 .daily-quote-container {
   position: relative;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  /* 液态玻璃背景 */
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.65) 0%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
   border-radius: 20px;
-  padding: 32px 40px 32px 80px;
+  padding: 32px 60px; /* 保持原有padding */
   box-shadow: 
     0 8px 32px rgba(0, 0, 0, 0.08),
     0 4px 12px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  /* 不添加边框，避免出现淡线 */
   max-width: 800px;
   width: 100%;
 }
 
 .quote-icon {
   position: absolute;
-  left: 30px;
+  left: 20px;
   top: 20px;
   font-size: 3rem;
   color: rgba(0, 0, 0, 0.15);
@@ -217,6 +242,7 @@
 
 .daily-quote-content {
   text-align: center;
+  width: 100%;
 }
 
 .quote-text {
@@ -236,12 +262,14 @@
   font-weight: 500;
 }
 
-/* 刷新按钮样式 */
+/* 刷新按钮样式（轻微玻璃效果） */
 .refresh-quote {
   position: absolute;
   right: 20px;
   top: 20px;
   background: rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
   border: none;
   border-radius: 50%;
   width: 36px;
@@ -306,12 +334,12 @@
   }
   
   .daily-quote-container {
-    padding: 24px 20px 24px 60px;
+    padding: 24px 40px;
     margin: 0 16px;
   }
   
   .quote-icon {
-    left: 20px;
+    left: 15px;
     font-size: 2.5rem;
   }
   
@@ -341,12 +369,12 @@
   }
   
   .daily-quote-container {
-    padding: 20px 16px 20px 50px;
+    padding: 20px 36px;
     border-radius: 16px;
   }
   
   .quote-icon {
-    left: 16px;
+    left: 12px;
     font-size: 2rem;
     top: 16px;
   }
@@ -398,8 +426,11 @@
 
 /* 深色模式支持 */
 [data-theme="dark"] .daily-quote-container {
-  background: rgba(26, 32, 44, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(
+    180deg,
+    rgba(26, 32, 44, 0.65) 0%,
+    rgba(26, 32, 44, 0.45) 100%
+  );
 }
 
 [data-theme="dark"] .quote-icon {
