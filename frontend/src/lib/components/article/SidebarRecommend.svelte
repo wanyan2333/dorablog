@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { goto, invalidateAll } from '$app/navigation';
+  import { goto } from '$app/navigation';
   import { userStore } from '$lib/session.js';
   // 本次改动：导入 showError 函数用于显示错误通知
   import { showSuccess, showError } from '$lib/toastStore.js'; 
@@ -60,26 +60,17 @@
     }
   });
   
-  async function handleArticleClick(articleId) {
-    // Force navigation with data refresh
-    await goto(`/articles/${articleId}`, { 
-      replaceState: false,
-      noScroll: false,
-      keepFocus: false,
-      invalidateAll: true
-    });
-    
-    // Force page refresh as fallback
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
+  // 完全照搬主页的跳转逻辑
+  function handleCardClick(articleId) {
+    goto(`/articles/${articleId}`);
   }
 
-  // 本次改动：修改点赞处理函数，使用 Toast 通知替代 alert
-  async function handleLikeClick(articleId) {
-    // 添加登录检查（和主页、详情页一样的方式）
+  // 完全照搬主页的点赞逻辑
+  async function handleLikeClick(event, articleId) {
+    event.stopPropagation(); // 阻止事件冒泡到卡片点击
+    
+    // 添加登录检查（和主页一样的方式）
     if (!isLoggedIn) {
-      // 本次改动：使用 Toast 通知替代 alert
       showError('Please log in to like articles');
       return;
     }
@@ -92,29 +83,23 @@
     try {
       const response = await fetch(`http://localhost:3000/api/articles/like/${articleId}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include' // 添加认证凭据
+        credentials: 'include'
       });
       
       if (response.ok) {
         const result = await response.json();
         // 更新本地点赞状态和数量
-        article.liked = result.liked;
+        article.liked = !article.liked; // 切换状态
         article.likeCount = result.likeCount;
         // 强制重新渲染
         recommendations = [...recommendations];
       } else if (response.status === 401) {
-        // 本次改动：使用 Toast 通知替代 alert
         showError('You need to log in to like articles');
       } else {
-        // 本次改动：添加错误处理
         showError('Failed to like article');
       }
     } catch (error) {
       console.error('Error toggling like:', error);
-      // 本次改动：添加错误处理
       showError('Error liking article');
     } finally {
       article.isLoading = false;
@@ -171,8 +156,8 @@
           class="recommendation-item" 
           role="button"
           tabindex="0"
-          on:click={() => handleArticleClick(article.id)}
-          on:keydown={(e) => e.key === 'Enter' && handleArticleClick(article.id)}
+          on:click={() => handleCardClick(article.id)}
+          on:keydown={(e) => e.key === 'Enter' && handleCardClick(article.id)}
         >
           <div class="article-image">
             <img 
@@ -195,12 +180,12 @@
                 </div>
               {/if}
             </div>
-            <div class="article-actions">
+            <div class="article-actions" on:click|stopPropagation>
               <button 
                 class="like-btn" 
                 class:liked={article.liked}
                 class:loading={article.isLoading}
-                on:click|stopPropagation={() => handleLikeClick(article.id)}
+                on:click={(e) => handleLikeClick(e, article.id)}
                 disabled={article.isLoading}
                 title="点赞"
               >

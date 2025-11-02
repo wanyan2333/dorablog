@@ -20,23 +20,36 @@
   
   let commentCount = article.comments || 0;
   let likeCount = article.likes || 0;
+  let liked = false;
 
   // 处理卡片点击跳转到文章详情页
   function handleCardClick() {
     goto(`/articles/${article.id}`);
   }
 
-  // 获取评论数
+  // 获取评论数和已点赞状态
   onMount(async () => {
     if (article.id) {
       try {
+        // 获取评论数
         const response = await fetch(`http://localhost:3000/api/comments/articles/${article.id}`);
         if (response.ok) {
           const comments = await response.json();
           commentCount = comments.length;
         }
+
+        // 检查已点赞状态（仅登录用户）
+        if (isLoggedIn) {
+          const likedResponse = await fetch(`http://localhost:3000/api/articles/${article.id}/liked`, {
+            credentials: 'include'
+          });
+          if (likedResponse.ok) {
+            const likedData = await likedResponse.json();
+            liked = likedData.liked;
+          }
+        }
       } catch (error) {
-        console.error('Error loading comment count:', error);
+        console.error('Error loading article data:', error);
       }
     }
   });
@@ -47,7 +60,7 @@
     
     // 直接使用 isLoggedIn 变量判断是否登录
     if (!isLoggedIn) {
-      showError('Please log in to like articles'); // 替换 alert 为 Toast 通知
+      showError('Please log in to like articles');
       return;
     }
     
@@ -61,15 +74,17 @@
       if (response.ok) {
         const result = await response.json();
         likeCount = result.likeCount;
+        // 切换已点赞状态
+        liked = !liked;
       } else if (response.status === 401) {
-        showError('You need to log in to like articles'); // 替换 alert 为 Toast 
+        showError('You need to log in to like articles');
       } else {
         console.error('Failed to like article:', response.status);
-        showError('Failed to like article'); // 添加错误提示
+        showError('Failed to like article');
       }
     } catch (error) {
       console.error('Error liking article:', error);
-      showError('Error liking article'); // 添加错误提示
+      showError('Error liking article');
     }
   }
 </script>
@@ -91,9 +106,9 @@
     
     <!-- 互动按钮 - 固定在左下角 -->
    <div class="interaction-container" on:click|stopPropagation>
-      <span class="like" on:click={handleLikeClick}> <!-- 添加点击处理 -->
+      <span class="like" class:liked={liked} on:click={handleLikeClick}>
         <img src='/src/assets/images/like-icon.png' alt="Like" />
-        {likeCount} <!-- 使用 likeCount 变量 -->
+        {likeCount}
       </span>
       <span class="comment">
         <img src='/src/assets/images/comment.png' alt="Comment" />
@@ -243,11 +258,25 @@
   align-items: center;
   gap: 0.3rem;
   cursor: pointer;
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .like:hover, .comment:hover {
   color: #003399;
+}
+
+/* 已点赞状态 - 使用和详情页一样的浅紫色 */
+.like.liked {
+  color: #667eea;
+}
+
+.like.liked img {
+  filter: brightness(0) saturate(100%) invert(52%) sepia(89%) saturate(1644%) hue-rotate(221deg) brightness(97%) contrast(90%);
+  transform: scale(1.1);
+}
+
+[data-theme="dark"] .like.liked {
+  color: #a78bfa;
 }
 
 [data-theme="dark"] .like:hover, 

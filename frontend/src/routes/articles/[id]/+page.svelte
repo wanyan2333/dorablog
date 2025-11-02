@@ -5,13 +5,12 @@
   import CommentsList from "$lib/components/comment/CommentsList.svelte";
 
   export let data;
-  const { article } = data;
+  // 使用响应式语句确保 article 在 data 更新时也更新
+  $: article = data.article;
   const SIDEBAR_W = 400;
-  
-  console.log('Article page loaded:', article.title);
-  console.log('Current article ID:', article.id);
 </script>
 
+{#key article.id}
 <div class="grid" style={`grid-template-columns:minmax(0,1fr) ${SIDEBAR_W}px;`}>
   <main class="main">
     <ArticleDetailCard
@@ -34,6 +33,7 @@
     <SidebarRecommend articleId={article.id} />
   </aside>
 </div>
+{/key}
 
 <style>
   .grid {

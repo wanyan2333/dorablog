@@ -65,8 +65,8 @@
     console.log('canEditDelete:', canEditDelete);
   }
 
-  // Check if user has liked this article on mount and get comment count
-  onMount(async () => {
+  // 加载文章数据（点赞状态和评论数）
+  async function loadArticleData() {
     if (articleId) {
       try {
         // Check like status (只有登录用户才检查)
@@ -78,6 +78,9 @@
             const likedData = await likedResponse.json();
             liked = likedData.liked;
           }
+        } else {
+          // 未登录时重置已点赞状态
+          liked = false;
         }
         
         // Get comment count
@@ -90,6 +93,16 @@
         console.error('Error loading article data:', error);
       }
     }
+  }
+
+  // 当 articleId 改变时重新加载数据
+  $: if (articleId) {
+    loadArticleData();
+  }
+
+  // Check if user has liked this article on mount and get comment count
+  onMount(async () => {
+    await loadArticleData();
   });
 
   // Toggle like/unlike
