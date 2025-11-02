@@ -623,16 +623,18 @@
 <style>
   .card {
     position: relative;
-    background: rgba(255, 255, 255, 0.92);
-    border-radius: 18px;
-    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     padding: 16px 18px 18px;
     transition: background 0.3s ease, box-shadow 0.3s ease;
   }
 
   [data-theme="dark"] .card {
-    background: rgba(26, 32, 44, 0.95);
-    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.3);
+    background: rgba(26, 32, 44, 0.8);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .action-buttons {

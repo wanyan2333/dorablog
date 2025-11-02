@@ -198,10 +198,17 @@
   .comments-section {
     margin-top: 0px; /* 完全移除上边距 */
     padding: 24px;
-    background: white;
-    opacity: 0.95;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  [data-theme="dark"] .comments-section {
+    background: rgba(26, 32, 44, 0.8);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .comments-header {
