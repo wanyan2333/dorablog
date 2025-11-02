@@ -3,6 +3,7 @@
   import { flip } from 'svelte/animate'; // 导入 flip 动画
   import { fade } from 'svelte/transition'; // 导入 fade 过渡效果
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores'; // 导入 page store 用于读取URL参数
   import { getArticles } from '$lib/api.js';
   import ArticleCard from '$lib/components/ArticleCard.svelte';
   import { userStore } from '$lib/session.js';
@@ -31,6 +32,14 @@
   
   // 用户登录状态
   $: isLoggedIn = $userStore !== null;
+
+  // 从URL参数读取页码
+  $: {
+    const urlPage = parseInt($page.url.searchParams.get('page')) || 1;
+    if (urlPage !== currentPage && urlPage >= 1) {
+      currentPage = urlPage;
+    }
+  }
 
   // 加载所有文章和标签
   onMount(async () => {
@@ -212,19 +221,30 @@
   // 计算总页数
   $: totalPages = Math.ceil(displayedArticles.length / pageSize);
 
-  // 当筛选条件变化时，重置到第一页
-  $: if (searchKeyword !== undefined || selectedTag !== undefined || sortBy || sortOrder) {
-    if (currentPage > totalPages && totalPages > 0) {
-      currentPage = 1;
+  // 当筛选条件变化导致总页数减少时，确保当前页不超过总页数
+  $: if (displayedArticles.length !== undefined && currentPage > totalPages && totalPages > 0) {
+    // 直接更新URL到第一页（使用 replaceState 避免在历史记录中留下无效页面）
+    updatePageUrl(1, true);
+  }
+
+  // 更新URL中的页码参数
+  function updatePageUrl(page, replace = false) {
+    if (typeof window !== 'undefined') {
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('page', page.toString());
+      goto(newUrl.pathname + newUrl.search, { replaceState: replace, noScroll: false });
     }
   }
 
-  // 分页导航函数
+  // 分页导航函数（更新URL参数以保持状态）
   function goToPage(page) {
     if (page >= 1 && page <= totalPages) {
-      currentPage = page;
+      updatePageUrl(page, false);
+      
       // 滚动到页面顶部
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
   }
 
