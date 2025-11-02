@@ -31,9 +31,15 @@ export async function createComment(commentData) {
   const db = await getDatabase();
   const { content, articleId, userId, parentCommentId } = commentData;
 
+  // Get current time in New Zealand timezone
+  const now = new Date();
+  const nzTimeString = now
+    .toLocaleString("sv-SE", { timeZone: "Pacific/Auckland" })
+    .replace("T", " ");
+
   const result = await db.run(
-    "INSERT INTO Comments (content, articleId, userId, parentCommentId, date) VALUES (?, ?, ?, ?, datetime('now'))",
-    [content, articleId, userId, parentCommentId]
+    "INSERT INTO Comments (content, articleId, userId, parentCommentId, date) VALUES (?, ?, ?, ?, ?)",
+    [content, articleId, userId, parentCommentId, nzTimeString]
   );
 
   // Get the created comment

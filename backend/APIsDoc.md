@@ -53,15 +53,15 @@ Finished
 
 UserInfo: <ins>id</ins>, username, password, realname, admin, description, \* _avatarId_
 
-Articles: <ins>id</ins>, title, date, content, _*userId*, __headerUrl_
+Articles: <ins>id</ins>, title, date, content, _*userId*, \_\_headerUrl_
 
-Comments: <ins>id</ins>, date, content, _*userId*, __articleId_, \*_parentCommentId_
+Comments: <ins>id</ins>, date, content, _*userId*, \_\_articleId_, \*_parentCommentId_
 
 Images: <ins>id</ins>, url ??
 
-ArticleImg: _*<ins>articleId</ins>*, __<ins>imgId</ins>_
+ArticleImg: _*<ins>articleId</ins>*, \_\_<ins>imgId</ins>_
 
-ArticleLike: _*<ins>articleId</ins>*, __<ins>userId</ins>_
+ArticleLike: _*<ins>articleId</ins>*, \_\_<ins>userId</ins>_
 
 ArticleTag: \*_<ins>articleId</ins>_, <ins>tag</ins>
 
@@ -69,7 +69,7 @@ ArticleTag: \*_<ins>articleId</ins>_, <ins>tag</ins>
 
 Notes
 
-- Authenticated endpoints require a valid JWT in the auth cookie (middleware: requiresAuthentication).
+- Authenticated endpoints require a valid JWT in the auth cookie (middleware: requiresAuth).
 - db helpers:
   - db.get -> single row object or undefined
   - db.all -> array of rows

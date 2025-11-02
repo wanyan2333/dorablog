@@ -6,7 +6,6 @@ import {
   deleteUser,
   getUserWithUserId
 } from "../../data/users-dao.js";
-import { requiresAdmin } from "../../middleware/auth-middleware.js";
 import { requireAuth } from "../../middleware/auth.js";
 import { hashPassword } from "../../utils/password-utils.js";
 
@@ -14,7 +13,7 @@ const router = express.Router();
 /**
  * Sending a GET request to /api/users/ will return an array of all users in the system.
  *
- * This route is protected by the requiresAdmin middleware, so only admin users can access it.
+ * This route is protected by the requireAuth middleware, so only admin users can access it.
  */
 router.get("/", requireAuth, (req, res) => {
   getAllUsers().then((users) => {
