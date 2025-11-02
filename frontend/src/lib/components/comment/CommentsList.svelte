@@ -15,6 +15,13 @@
   let newCommentContent = "";
   let isSubmitting = false;
 
+  // Toggle comments visibility
+  let showComments = true;
+  
+  function toggleComments() {
+    showComments = !showComments;
+  }
+
   $: isLoggedIn = $userStore !== null;
   $: currentUser = $userStore;
 
@@ -128,55 +135,62 @@
 </script>
 
 <div class="comments-section">
-  <h3>Comments</h3>
+  <div class="comments-header">
+    <h3>Comments</h3>
+    <button class="toggle-comments-btn" on:click={toggleComments}>
+      {showComments ? 'Hide Comments' : 'Show Comments'}
+    </button>
+  </div>
 
-  {#if loading}
-    <p class="loading">Loading comments...</p>
-  {:else if error}
-    <p class="error">{error}</p>
-  {:else if !comments || comments.length === 0}
-    <p class="no-comments">No comments yet. Be the first to comment!</p>
-  {:else}
-    <div class="comments-list">
-      {#each comments as comment (comment.id)}
-        <CommentItem
-          {comment}
-          depth={0}
-          {articleId}
-          {isLoggedIn}
-          {currentUser}
-          {articleAuthorId}
-          on:commentAdded={handleCommentAdded}
-          on:commentUpdated={handleCommentUpdated}
-          on:commentDeleted={handleCommentDeleted}
-        />
-      {/each}
-    </div>
-  {/if}
-
-  {#if isLoggedIn}
-    <div class="new-comment-form">
-      <h4>Add a Comment</h4>
-      <textarea
-        bind:value={newCommentContent}
-        placeholder="Write your comment..."
-        rows="4"
-        disabled={isSubmitting}
-      ></textarea>
-      <div class="form-actions">
-        <button
-          class="submit-btn"
-          on:click={submitNewComment}
-          disabled={!newCommentContent.trim() || isSubmitting}
-        >
-          {isSubmitting ? "Posting..." : "Post Comment"}
-        </button>
+  {#if showComments}
+    {#if loading}
+      <p class="loading">Loading comments...</p>
+    {:else if error}
+      <p class="error">{error}</p>
+    {:else if !comments || comments.length === 0}
+      <p class="no-comments">No comments yet. Be the first to comment!</p>
+    {:else}
+      <div class="comments-list">
+        {#each comments as comment (comment.id)}
+          <CommentItem
+            {comment}
+            depth={0}
+            {articleId}
+            {isLoggedIn}
+            {currentUser}
+            {articleAuthorId}
+            on:commentAdded={handleCommentAdded}
+            on:commentUpdated={handleCommentUpdated}
+            on:commentDeleted={handleCommentDeleted}
+          />
+        {/each}
       </div>
-    </div>
-  {:else}
-    <div class="login-prompt">
-      <p>Please <a href="/login">log in</a> to post comments.</p>
-    </div>
+    {/if}
+
+    {#if isLoggedIn}
+      <div class="new-comment-form">
+        <h4>Add a Comment</h4>
+        <textarea
+          bind:value={newCommentContent}
+          placeholder="Write your comment..."
+          rows="4"
+          disabled={isSubmitting}
+        ></textarea>
+        <div class="form-actions">
+          <button
+            class="submit-btn"
+            on:click={submitNewComment}
+            disabled={!newCommentContent.trim() || isSubmitting}
+          >
+            {isSubmitting ? "Posting..." : "Post Comment"}
+          </button>
+        </div>
+      </div>
+    {:else}
+      <div class="login-prompt">
+        <p>Please <a href="/login">log in</a> to post comments.</p>
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -190,11 +204,60 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
+  .comments-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
   .comments-section h3 {
-    margin: 0 0 24px 0;
+    margin: 0;
     color: #333;
     font-size: 24px;
     font-weight: 600;
+  }
+
+  .toggle-comments-btn {
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .toggle-comments-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transition: left 0.3s ease;
+    z-index: -1;
+  }
+
+  .toggle-comments-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  .toggle-comments-btn:hover::before {
+    left: 0;
+  }
+
+  .toggle-comments-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
   }
 
   .comments-section h4 {
