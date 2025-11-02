@@ -1,5 +1,4 @@
 import express from "express";
-import { requiresAdmin, requiresAuthentication } from "../../middleware/auth-middleware.js";
 import {
   getCommentsByArticleId,
   createComment,

@@ -2,7 +2,6 @@ import express from "express";
 
 const router = express.Router();
 
-
 // import child routes
 // import tempRoutes from "./api-temp.js";
 // router.use("/messages", tempRoutes);
@@ -14,6 +13,5 @@ import articleRoutes from "./api-articles.js";
 router.use("/articles", articleRoutes);
 import commentRoutes from "./api-comments.js";
 router.use("/comments", commentRoutes);
-
 
 export default router;
