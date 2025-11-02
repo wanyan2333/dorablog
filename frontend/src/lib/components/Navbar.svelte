@@ -14,7 +14,6 @@
     <div class="nav-links">
       <button class="nav-link" on:click={() => goto('/')}><span>Home</span></button>
       <button class="nav-link" on:click={() => goto('/articles')}><span>Articles</span></button>
-      <button class="nav-link" on:click={() => goto('/favorites')}><span>Favorites</span></button>
     </div>
     
     <div class="nav-actions">

@@ -73,7 +73,7 @@ export const load = async ({ params, fetch }) => {
         
         // Author information
         author: {
-          name: articleData.authorUsername || 'Unknown',
+          name: articleData.authorRealname || articleData.authorUsername || 'Unknown',
           avatar: getAvatarUrl(articleData.authorAvatar)
         },
         

@@ -13,7 +13,7 @@ export async function getAllArticles(tag = null) {
   let query = `
     SELECT 
       Articles.*,
-      Users.username as author,
+      Users.username as authorUsername,
       Users.realname as authorRealName,
       Users.avatarUrl as authorAvatar,
       IFNULL(like_stats.likeCount, 0) as likeCount,
@@ -111,7 +111,35 @@ export async function getArticleById(articleId) {
  */
 export async function getArticlesByUserId(userId) {
   const db = await getDatabase();
-  const articles = await db.all("SELECT * FROM Articles WHERE userId = ?", userId);
+  const articles = await db.all(`
+    SELECT 
+      Articles.*,
+      Users.username as authorUsername,
+      Users.realname as authorRealName,
+      Users.avatarUrl as authorAvatar,
+      IFNULL(like_stats.likeCount, 0) as likeCount,
+      IFNULL(comment_stats.commentCount, 0) as commentCount
+    FROM Articles 
+    LEFT JOIN Users ON Articles.userId = Users.id 
+    LEFT JOIN (
+      SELECT articleId, COUNT(*) as likeCount 
+      FROM ArticleLike 
+      GROUP BY articleId
+    ) like_stats ON Articles.id = like_stats.articleId
+    LEFT JOIN (
+      SELECT articleId, COUNT(*) as commentCount 
+      FROM Comments 
+      GROUP BY articleId
+    ) comment_stats ON Articles.id = comment_stats.articleId
+    WHERE Articles.userId = ?
+    ORDER BY Articles.date DESC
+  `, userId);
+  
+  // Ensure commentCount is never null
+  articles.forEach(article => {
+    article.commentCount = article.commentCount || 0;
+  });
+  
   return articles;
 }
 
@@ -152,7 +180,22 @@ export async function searchArticles(keyword) {
   clauses.push("Users.username LIKE ?");
   values.push(likePattern);
 
-  const sql = `SELECT Articles.* FROM Articles LEFT JOIN Users ON Articles.userId = Users.id WHERE ${clauses.join(" OR ")}`;
+  const sql = `
+    SELECT 
+      Articles.*,
+      Users.username as authorUsername,
+      Users.realname as authorRealName,
+      Users.avatarUrl as authorAvatar,
+      IFNULL(like_stats.likeCount, 0) as likeCount
+    FROM Articles 
+    LEFT JOIN Users ON Articles.userId = Users.id 
+    LEFT JOIN (
+      SELECT articleId, COUNT(*) as likeCount 
+      FROM ArticleLike 
+      GROUP BY articleId
+    ) like_stats ON Articles.id = like_stats.articleId
+    WHERE ${clauses.join(" OR ")}
+  `;
 
   const articles = await db.all(sql, ...values);
   return articles;
@@ -306,7 +349,7 @@ export async function getRecommendedArticles(articleId, limit = 5) {
   // Step 1: Same Tag Priority (sorted by latest date)
   if (currentTags.length > 0) {
     const sameTagArticles = await db.all(`
-      SELECT DISTINCT a.*, u.username as author, u.realname as authorRealName, u.avatarUrl as authorAvatar,
+      SELECT DISTINCT a.*, u.username as authorUsername, u.realname as authorRealName, u.avatarUrl as authorAvatar,
              IFNULL(like_stats.likeCount, 0) as likeCount,
              IFNULL(comment_stats.commentCount, 0) as commentCount,
              (IFNULL(like_stats.likeCount, 0) * 1.0 + IFNULL(comment_stats.commentCount, 0) * 2.0) as popularityScore
@@ -340,7 +383,7 @@ export async function getRecommendedArticles(articleId, limit = 5) {
   // Step 2: Popularity Priority (if still not enough)
   if (recommendations.length < limit) {
     const popularArticles = await db.all(`
-      SELECT a.*, u.username as author, u.realname as authorRealName, u.avatarUrl as authorAvatar,
+      SELECT a.*, u.username as authorUsername, u.realname as authorRealName, u.avatarUrl as authorAvatar,
              IFNULL(like_stats.likeCount, 0) as likeCount,
              IFNULL(comment_stats.commentCount, 0) as commentCount,
              (IFNULL(like_stats.likeCount, 0) * 1.0 + IFNULL(comment_stats.commentCount, 0) * 2.0) as popularityScore
@@ -435,7 +478,7 @@ export async function getLikedArticlesByUser(userId) {
   const articles = await db.all(`
     SELECT 
       Articles.*,
-      Users.username as author,
+      Users.username as authorUsername,
       Users.realname as authorRealName,
       Users.avatarUrl as authorAvatar,
       IFNULL(like_stats.likeCount, 0) as likeCount,

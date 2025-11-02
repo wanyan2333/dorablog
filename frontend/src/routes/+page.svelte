@@ -45,7 +45,7 @@
           id: article.id,
           avatar: articleImage,
           title: article.title,
-          author: article.authorRealName || article.author, // 优先使用真实姓名
+          author: article.authorRealName || article.authorUsername || 'Unknown', // 优先使用真实姓名，然后用户名
           authorAvatar: article.authorAvatar || '/src/assets/images/avatar-placeholder.png', // 直接使用数据库中的头像路径
           excerpt: article.content ? article.content.substring(0, 100) + '...' : '暂无内容',
           likes: article.likeCount || 0,

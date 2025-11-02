@@ -65,8 +65,8 @@
     console.log('canEditDelete:', canEditDelete);
   }
 
-  // Check if user has liked this article on mount and get comment count
-  onMount(async () => {
+  // 加载文章数据（点赞状态和评论数）
+  async function loadArticleData() {
     if (articleId) {
       try {
         // Check like status (只有登录用户才检查)
@@ -78,6 +78,9 @@
             const likedData = await likedResponse.json();
             liked = likedData.liked;
           }
+        } else {
+          // 未登录时重置已点赞状态
+          liked = false;
         }
         
         // Get comment count
@@ -90,6 +93,16 @@
         console.error('Error loading article data:', error);
       }
     }
+  }
+
+  // 当 articleId 改变时重新加载数据
+  $: if (articleId) {
+    loadArticleData();
+  }
+
+  // Check if user has liked this article on mount and get comment count
+  onMount(async () => {
+    await loadArticleData();
   });
 
   // Toggle like/unlike
@@ -610,16 +623,18 @@
 <style>
   .card {
     position: relative;
-    background: rgba(255, 255, 255, 0.92);
-    border-radius: 18px;
-    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     padding: 16px 18px 18px;
     transition: background 0.3s ease, box-shadow 0.3s ease;
   }
 
   [data-theme="dark"] .card {
-    background: rgba(26, 32, 44, 0.95);
-    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.3);
+    background: rgba(26, 32, 44, 0.8);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
 
   .action-buttons {

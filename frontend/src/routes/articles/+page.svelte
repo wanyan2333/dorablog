@@ -1,7 +1,9 @@
 <script>
   import { onMount } from 'svelte';
   import { flip } from 'svelte/animate'; // 导入 flip 动画
+  import { fade } from 'svelte/transition'; // 导入 fade 过渡效果
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores'; // 导入 page store 用于读取URL参数
   import { getArticles } from '$lib/api.js';
   import ArticleCard from '$lib/components/ArticleCard.svelte';
   import { userStore } from '$lib/session.js';
@@ -10,6 +12,7 @@
   let allArticles = [];
   let displayedArticles = [];
   let loading = true;
+  let isRefreshing = false; // 用于刷新时的加载状态（不会完全替换页面）
   let error = null;
 
   // 搜索、排序和筛选状态
@@ -30,10 +33,18 @@
   // 用户登录状态
   $: isLoggedIn = $userStore !== null;
 
+  // 从URL参数读取页码
+  $: {
+    const urlPage = parseInt($page.url.searchParams.get('page')) || 1;
+    if (urlPage !== currentPage && urlPage >= 1) {
+      currentPage = urlPage;
+    }
+  }
+
   // 加载所有文章和标签
   onMount(async () => {
     await loadTags();
-    await loadArticles();
+    await loadArticles(true); // 初始加载
   });
 
   // 加载所有标签
@@ -49,9 +60,14 @@
   }
 
   // 加载文章（支持标签筛选和"我的点赞"筛选）
-  async function loadArticles() {
+  async function loadArticles(isInitialLoad = false) {
     try {
-      loading = true;
+      // 初始加载时显示全屏loading，刷新时使用小的刷新指示器
+      if (isInitialLoad) {
+        loading = true;
+      } else {
+        isRefreshing = true;
+      }
       error = null;
       
       let url = 'http://localhost:3000/api/articles';
@@ -74,6 +90,7 @@
         allArticles = [];
         displayedArticles = [];
         loading = false;
+        isRefreshing = false;
         return;
       }
       
@@ -96,10 +113,12 @@
       displayedArticles = [...allArticles];
       sortArticles();
       loading = false;
+      isRefreshing = false;
     } catch (err) {
       console.error('Error loading articles:', err);
       error = 'Failed to load articles. Please try again.';
       loading = false;
+      isRefreshing = false;
     }
   }
 
@@ -202,19 +221,30 @@
   // 计算总页数
   $: totalPages = Math.ceil(displayedArticles.length / pageSize);
 
-  // 当筛选条件变化时，重置到第一页
-  $: if (searchKeyword !== undefined || selectedTag !== undefined || sortBy || sortOrder) {
-    if (currentPage > totalPages && totalPages > 0) {
-      currentPage = 1;
+  // 当筛选条件变化导致总页数减少时，确保当前页不超过总页数
+  $: if (displayedArticles.length !== undefined && currentPage > totalPages && totalPages > 0) {
+    // 直接更新URL到第一页（使用 replaceState 避免在历史记录中留下无效页面）
+    updatePageUrl(1, true);
+  }
+
+  // 更新URL中的页码参数
+  function updatePageUrl(page, replace = false) {
+    if (typeof window !== 'undefined') {
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.set('page', page.toString());
+      goto(newUrl.pathname + newUrl.search, { replaceState: replace, noScroll: false });
     }
   }
 
-  // 分页导航函数
+  // 分页导航函数（更新URL参数以保持状态）
   function goToPage(page) {
     if (page >= 1 && page <= totalPages) {
-      currentPage = page;
+      updatePageUrl(page, false);
+      
       // 滚动到页面顶部
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
   }
 
@@ -346,18 +376,33 @@
     </div>
   </div>
 
-  <!-- 结果信息 -->
+  <!-- 结果信息和刷新指示器 -->
   <div class="results-info">
-    {#if showMyLikes}
-      <p>Showing <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} you liked ❤️</p>
-    {:else if searchKeyword && selectedTag}
-      <p>Found <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} in tag "<em>{selectedTag}</em>" matching "<em>{searchKeyword}</em>"</p>
-    {:else if searchKeyword}
-      <p>Found <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} matching "<em>{searchKeyword}</em>"</p>
-    {:else if selectedTag}
-      <p>Showing <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} in tag "<em>{selectedTag}</em>"</p>
-    {:else}
-      <p>Showing <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''}</p>
+    <div class="results-text">
+      {#if showMyLikes}
+        <p>Showing <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} you liked ❤️</p>
+      {:else if searchKeyword && selectedTag}
+        <p>Found <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} in tag "<em>{selectedTag}</em>" matching "<em>{searchKeyword}</em>"</p>
+      {:else if searchKeyword}
+        <p>Found <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} matching "<em>{searchKeyword}</em>"</p>
+      {:else if selectedTag}
+        <p>Showing <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''} in tag "<em>{selectedTag}</em>"</p>
+      {:else}
+        <p>Showing <strong>{displayedArticles.length}</strong> article{displayedArticles.length !== 1 ? 's' : ''}</p>
+      {/if}
+    </div>
+    
+    <!-- 小的刷新指示器 -->
+    {#if isRefreshing}
+      <div class="small-spinner" transition:fade={{ duration: 200 }}>
+        <svg width="20" height="20" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" opacity="0.25"/>
+          <path d="M12 2 A 10 10 0 0 1 22 12" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round">
+            <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+          </path>
+        </svg>
+        <span>Updating...</span>
+      </div>
     {/if}
   </div>
 
@@ -388,7 +433,7 @@
       </p>
     </div>
   {:else}
-    <div class="articles-grid">
+    <div class="articles-grid" transition:fade={{ duration: 300 }}>
       {#each articleCards as article (article.id)}
         <div animate:flip={{ duration: 555 }}>
           <ArticleCard {article} />
@@ -706,13 +751,17 @@
  
 /* 结果信息 */
 .results-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 1.5rem;
   padding: 0 0.25rem;
 }
 
-.results-info p {
+.results-text p {
   color: #7f8c8d;
   font-size: 0.95rem;
+  margin: 0;
 }
 
 .results-info strong {
@@ -726,8 +775,26 @@
   font-weight: 600;
 }
 
+/* 小的刷新指示器 */
+.small-spinner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #667eea;
+  font-size: 0.9rem;
+  animation: fadeIn 0.2s ease-in;
+}
+
+.small-spinner svg {
+  color: #667eea;
+}
+
+.small-spinner span {
+  font-weight: 500;
+}
+
 /* 暗色模式支持 */
-[data-theme="dark"] .results-info p {
+[data-theme="dark"] .results-text p {
   color: #a0aec0;
 }
 
@@ -739,12 +806,21 @@
   color: #90cdf4;
 }
 
+[data-theme="dark"] .small-spinner {
+  color: #90cdf4;
+}
+
+[data-theme="dark"] .small-spinner svg {
+  color: #90cdf4;
+}
+
   /* 文章网格 */
   .articles-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
+    min-height: 600px;
   }
 
   /* 加载状态 */
@@ -769,6 +845,11 @@
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   /* 错误状态 */
