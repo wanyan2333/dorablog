@@ -44,7 +44,8 @@ body, html {
   background-image: var(--background-image);
   background-size: 900px 900px;
   background-repeat: repeat;
-  background-position: center;
+  background-position: 0 0;
+  background-attachment: fixed;
   transition: background-color 0.3s ease, color 0.3s ease, background-image 0.3s ease;
 }
 
@@ -190,5 +191,6 @@ body, html {
 body {
   background-color: var(--background-color);
   color: var(--text-color);
+  background-attachment: fixed;
   transition: background-color 0.3s ease, color 0.3s ease, background-image 0.3s ease;
 }

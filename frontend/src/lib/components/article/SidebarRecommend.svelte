@@ -184,7 +184,7 @@
           <div class="article-content">
             <h4 class="article-title">{article.title}</h4>
             <div class="article-meta-line">
-              <p class="article-author">By {article.author}</p>
+              <p class="article-author">By {article.authorRealName || article.authorUsername || 'Unknown'}</p>
               {#if article.tags && article.tags.length > 0}
                 <div class="article-tags">
                   {#each article.tags as tag}
