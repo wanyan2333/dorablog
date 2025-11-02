@@ -14,17 +14,10 @@
   let showReplyForm = false;
   let replyContent = "";
   let isSubmitting = false;
-  let isEditing = false;
-  let editContent = "";
   let showChildren = false; // Control visibility of children comments
 
-  // Initialize edit content when editing starts
-  $: if (isEditing) {
-    editContent = comment.content;
-  }
-
   // Check if current user can edit/delete this comment
-  $: canEdit =
+  $: canDelete =
     currentUser &&
     (articleAuthorId === currentUser.id ||
       currentUser.id === comment.userId ||
@@ -38,16 +31,6 @@
     if (!showReplyForm) {
       replyContent = "";
     }
-  }
-
-  function startEdit() {
-    isEditing = true;
-    editContent = comment.content;
-  }
-
-  function cancelEdit() {
-    isEditing = false;
-    editContent = "";
   }
 
   function toggleChildren() {
@@ -83,37 +66,6 @@
       }
     } catch (error) {
       console.error("Error submitting reply:", error);
-    } finally {
-      isSubmitting = false;
-    }
-  }
-
-  async function updateComment() {
-    if (!editContent.trim() || isSubmitting) return;
-
-    isSubmitting = true;
-
-    try {
-      const response = await fetch(`${PUBLIC_API_BASE_URL}/comments/${comment.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          content: editContent.trim()
-        })
-      });
-
-      if (response.ok) {
-        const updatedComment = await response.json();
-        dispatch("commentUpdated", { comment: updatedComment });
-        isEditing = false;
-      } else {
-        console.error("Failed to update comment");
-      }
-    } catch (error) {
-      console.error("Error updating comment:", error);
     } finally {
       isSubmitting = false;
     }
@@ -209,27 +161,9 @@
         <span class="comment-date">{formatDate(comment.date)}</span>
       </div>
 
-      {#if isEditing}
-        <div class="edit-form">
-          <textarea bind:value={editContent} rows="3" disabled={isSubmitting}></textarea>
-          <div class="edit-actions">
-            <button
-              class="save-btn"
-              on:click={updateComment}
-              disabled={!editContent.trim() || isSubmitting}
-            >
-              {isSubmitting ? "Saving..." : "Save"}
-            </button>
-            <button class="cancel-btn" on:click={cancelEdit} disabled={isSubmitting}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      {:else}
-        <div class="comment-text">
-          {comment.content}
-        </div>
-      {/if}
+      <div class="comment-text">
+        {comment.content}
+      </div>
 
       <div class="comment-actions">
         {#if isLoggedIn}
@@ -244,8 +178,7 @@
               : `Show ${comment.childrenComments.length} Repl${comment.childrenComments.length === 1 ? "y" : "ies"}`}
           </button>
         {/if}
-        {#if canEdit}
-          <button class="edit-btn" on:click={startEdit}> Edit </button>
+        {#if canDelete}
           <button class="delete-btn" on:click={deleteComment}> Delete </button>
         {/if}
       </div>
@@ -395,7 +328,6 @@
   }
 
   .reply-btn,
-  .edit-btn,
   .delete-btn,
   .toggle-children-btn {
     background: none;
@@ -415,14 +347,6 @@
     background: #e3f2fd;
   }
 
-  .edit-btn {
-    color: #28a745;
-  }
-
-  .edit-btn:hover {
-    background: #d4edda;
-  }
-
   .delete-btn {
     color: #dc3545;
   }
@@ -431,8 +355,7 @@
     background: #f8d7da;
   }
 
-  .reply-form,
-  .edit-form {
+  .reply-form {
     margin-top: 12px;
     padding: 12px;
     background: white;
@@ -440,8 +363,7 @@
     border: 1px solid #e0e0e0;
   }
 
-  .reply-form textarea,
-  .edit-form textarea {
+  .reply-form textarea {
     width: 100%;
     border: 1px solid #ddd;
     border-radius: 4px;
@@ -451,8 +373,7 @@
     margin-bottom: 8px;
   }
 
-  .reply-form textarea:focus,
-  .edit-form textarea:focus {
+  .reply-form textarea:focus {
     outline: none;
     border-color: #007bff;
   }
@@ -483,26 +404,6 @@
 
   .submit-btn:disabled,
   .save-btn:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-  }
-
-  .cancel-btn {
-    background: #6c757d;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.2s ease;
-  }
-
-  .cancel-btn:hover:not(:disabled) {
-    background: #545b62;
-  }
-
-  .cancel-btn:disabled {
     background: #ccc;
     cursor: not-allowed;
   }
