@@ -5,6 +5,7 @@ This repository contains a starting point for your team's final project. We look
 Your team should update this README to include the information required, as presented in the project handout available on Canvas.
 
 Your team members are:
+
 - Leo Mo-yung _(xmu745@aucklanduni.ac.nz)_
 - Yushun Shi _(yshi675@aucklanduni.ac.nz)_
 - Xuan Zeng _(xzen317@aucklanduni.ac.nz)_
@@ -27,6 +28,36 @@ Commands to run before commits:
 - In Frontend `npm run format` to double check code is formatted
 
 All commits MUST have a brief descriptive message
+
+Useful usernames / passwords: Leo 123456 (admin); Xuan 123456.
+
+## API documentation
+
+see the APIsDoc.md in backend folder
+
+## Description of all pages
+
+Homepage:
+
+Newpost:
+
+Blogdetail:
+
+Articles:
+
+Login:
+
+Profile:
+
+Register:
+
+## Description of how to use Java Swing admin interface
+
+Press the login button to login with a admin account(Leo 123456). After login, the users info will be shown in table. Select a user, its info will be displayed in right panel and press the delete button to delete it. Then, the table will refresh. You can also press the logout button to logout.
+
+# Additional dependency
+
+tinymce-svelte(for article editting), bcrypt(for passsword hashing and salting), jsonwebtoken(for json web token)
 
 ## Git
 

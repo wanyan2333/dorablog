@@ -119,7 +119,8 @@ INSERT INTO Users (username, passwordHash, realname, admin, description, avatarU
     ('eve', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Eve Davis', FALSE, 'Food blogger.', 'https://i.pravatar.cc/150?img=8'),
     ('frank', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Frank Miller', FALSE, 'Sports fan.', 'https://i.pravatar.cc/150?img=9'),
     ('grace', '$2b$10$rQZ8K9vL2nM3pO4qR5sT6uV7wX8yZ9aA0bB1cC2dD3eE4fF5gG6hH7iI8jJ9kK0lL1mM2nN3oO4pP5qQ6rR7sS8tT9uU0vV1wW2xX3yY4zZ5', 'Grace Lee', FALSE, 'Health and wellness advocate.', 'https://i.pravatar.cc/150?img=10'),
-    ('Leo', '$2b$10$F4aHD/tBLn4D/bhT76MjOunoTLzXMb6/iRf3B8heFtoMWTbnRbhiG', 'Leo', TRUE, 'Health and wellness advocate.', '/avatars/avatar-leo.png');
+    ('Leo', '$2b$10$F4aHD/tBLn4D/bhT76MjOunoTLzXMb6/iRf3B8heFtoMWTbnRbhiG', 'Leo', TRUE, 'Health and wellness advocate.', '/avatars/avatar-leo.png'),
+    ('Xuan', '$2b$10$F4aHD/tBLn4D/bhT76MjOunoTLzXMb6/iRf3B8heFtoMWTbnRbhiG', 'Xuan', FALSE, 'LOL.', '/avatars/avatar-xuan.png');
 
 -- Dummy articles data with real content and THEMED Unsplash images (30 articles, dates within last week)
 INSERT INTO Articles (title, date, content, userId, headerUrl) VALUES
