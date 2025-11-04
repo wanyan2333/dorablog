@@ -109,7 +109,6 @@
             const imageUrl = 'http://localhost:3000' + result.imageUrl;
             // 保存图片URL到数组
             uploadedImages = [...uploadedImages, result.imageUrl];
-            console.log('Uploaded images:', uploadedImages);
             resolve(imageUrl);
           } else {
             reject('Upload failed: ' + (result.error || 'Unknown error'));
@@ -378,10 +377,6 @@
         headerImage: headerImageUrl, // 发送URL而不是File对象
         contentImages: uploadedImages // 发送图片URL数组
       };
-      
-      console.log('Submitting article:', articleData);
-      console.log('Content images array:', uploadedImages);
-      console.log('Content images count:', uploadedImages.length);
       
       const result = await api('/api/articles', {
         method: 'POST',

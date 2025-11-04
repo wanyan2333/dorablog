@@ -2,18 +2,9 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { userStore } from '$lib/session.js'; 
-  import { showError } from '$lib/toastStore.js'; // 添加这行导入
+  import { showError } from '$lib/toastStore.js';
   
-  export let article = {
-    id: 1,
-    avatar: '/images/doraemon1.png',
-    title: 'Sample Article',
-    author: 'Steven Shi',
-    authorAvatar: '/images/avatar-placeholder.png',
-    excerpt: 'This semester have so much hard work which from COMPSCI...',
-    likes: 86,
-    comments: 5
-  };
+  export let article;
 
   $: isLoggedIn = $userStore !== null;
   $: currentUser = $userStore;

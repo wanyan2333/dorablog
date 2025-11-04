@@ -185,8 +185,6 @@ router.delete("/:id", requireAuth, async (req, res) => {
       return res.status(403).json({ error: "You don't have permission to delete this article" });
     }
 
-    console.log("User", userId, "deleting article", articleId, "(author:", article.userId, ")");
-
     // 删除相关数据（按照外键依赖顺序）
     // 1. 删除文章评论
     await db.run("DELETE FROM Comments WHERE articleId = ?", articleId);
@@ -203,8 +201,6 @@ router.delete("/:id", requireAuth, async (req, res) => {
     // 5. 最后删除文章本身
     await db.run("DELETE FROM Articles WHERE id = ?", articleId);
 
-    console.log(`Article ${articleId} and all related data deleted successfully`);
-
     return res.status(200).json({
       message: "Article deleted successfully",
       articleId: articleId
@@ -219,7 +215,6 @@ router.delete("/:id", requireAuth, async (req, res) => {
  * Sending a GET request to /api/articles/:id will return the article with the given id.
  */
 router.get("/:id", (req, res) => {
-  console.log("Fetching article with ID:", req.params);
   getArticleById(req.params.id).then((article) => {
     if (article) {
       return res.status(200).json(article);
@@ -237,13 +232,6 @@ router.post("/", requireAuth, async (req, res) => {
   try {
     const { title, content, tag, headerImage, contentImages } = req.body;
     const userId = req.user.id; // 从认证中间件获取用户ID
-
-    // 打印用户信息，确认认证成功
-    console.log("=== Article Creation Request ===");
-    console.log("Authenticated user:", req.user);
-    console.log("User ID:", userId);
-    console.log("Username:", req.user.username);
-    console.log("Article title:", title);
 
     // Validate required fields
     if (!title || !content) {
@@ -269,16 +257,8 @@ router.post("/", requireAuth, async (req, res) => {
       contentImages: contentImages || [] // 传递图片URL数组
     };
 
-    console.log("Creating article for user:", userId, "with images:", contentImages);
-
     // Create the article
     const createdArticle = await createArticle(articleData);
-
-    console.log("=== Article Created Successfully ===");
-    console.log("Article ID:", createdArticle.id);
-    console.log("Article Title:", createdArticle.title);
-    console.log("Author User ID:", createdArticle.userId);
-    console.log("================================");
 
     return res.status(201).json({
       message: "Article created successfully",
@@ -323,8 +303,6 @@ router.put("/:id", requireAuth, async (req, res) => {
       return res.status(403).json({ error: "You don't have permission to edit this article" });
     }
 
-    console.log("User", userId, "editing article", articleId, "(author:", article.userId, ")");
-
     // 更新文章内容
     await db.run("UPDATE Articles SET content = ? WHERE id = ?", [content.trim(), articleId]);
 
@@ -333,7 +311,6 @@ router.put("/:id", requireAuth, async (req, res) => {
 
     // 添加新的内容图片
     if (contentImages && contentImages.length > 0) {
-      console.log("Updating content images:", contentImages);
       for (const imageUrl of contentImages) {
         await db.run("INSERT INTO ArticleImg (articleId, imgUrl) VALUES (?, ?)", [
           articleId,
@@ -381,8 +358,6 @@ router.post("/upload-image", upload.single("image"), async (req, res) => {
 
     // 返回图片URL
     const imageUrl = `/uploads/articles/${req.file.filename}`;
-
-    console.log("Article image uploaded - filename:", req.file.filename);
 
     // 同时支持TinyMCE格式（location）和自定义格式（success + imageUrl）
     res.json({

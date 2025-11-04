@@ -55,15 +55,6 @@
   
   // 检查当前用户是否是文章作者（可以编辑/删除）
   $: canEditDelete = isLoggedIn && currentUser && userId && (currentUser.id === userId || currentUser.isAdmin);
-  
-  // 调试日志
-  $: if (articleId) {
-    console.log('=== Edit/Delete Permission Check ===');
-    console.log('isLoggedIn:', isLoggedIn);
-    console.log('currentUser:', currentUser);
-    console.log('Article userId:', userId);
-    console.log('canEditDelete:', canEditDelete);
-  }
 
   // 加载文章数据（点赞状态和评论数）
   async function loadArticleData() {
@@ -223,7 +214,6 @@
             const imageUrl = 'http://localhost:3000' + result.imageUrl;
             // 保存图片URL到数组
             uploadedImages = [...uploadedImages, result.imageUrl];
-            console.log('Uploaded images:', uploadedImages);
             resolve(imageUrl);
           } else {
             reject('Upload failed: ' + (result.error || 'Unknown error'));
@@ -375,9 +365,6 @@
       contentWithImages += '</p>';
     }
     
-    console.log('Start editing - cleanText:', cleanText);
-    console.log('Start editing - contentWithImages:', contentWithImages);
-    
     editedContent = contentWithImages;
   }
   
@@ -393,8 +380,6 @@
     if (!articleId) return;
     
     try {
-      console.log('Deleting article:', articleId);
-      
       const response = await fetch(`http://localhost:3000/api/articles/${articleId}`, {
         method: 'DELETE',
         credentials: 'include', // 包含认证cookie
@@ -404,11 +389,8 @@
       });
       
       const responseText = await response.text();
-      console.log('Delete response status:', response.status);
-      console.log('Delete response text:', responseText);
       
       if (response.ok) {
-        console.log('Article deleted successfully');
         showSuccess('Article deleted successfully!');
         // 延迟跳转，让用户看到成功提示
         setTimeout(() => {
@@ -436,9 +418,6 @@
     isSaving = true;
     
     try {
-      console.log('Starting save...');
-      console.log('editedContent:', editedContent);
-      
       // 从content中提取所有图片URL
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = editedContent.trim() || '';
@@ -461,8 +440,6 @@
       
       let contentWithoutImages = tempDiv.innerHTML.trim();
       
-      console.log('Before cleaning:', contentWithoutImages);
-      
       // 使用循环持续清理末尾的空白，直到没有变化为止
       let previousContent = '';
       while (previousContent !== contentWithoutImages) {
@@ -478,9 +455,6 @@
         contentWithoutImages = contentWithoutImages.replace(/\s+$/g, '');
       }
       
-      console.log('After cleaning:', contentWithoutImages);
-      console.log('Image URLs:', imageUrls);
-      
       // 调用后端API更新文章
       const response = await fetch(`http://localhost:3000/api/articles/${articleId}`, {
         method: 'PUT',
@@ -495,12 +469,9 @@
       });
       
       const responseText = await response.text();
-      console.log('Response status:', response.status);
-      console.log('Response text:', responseText);
       
       if (response.ok) {
         const responseData = JSON.parse(responseText);
-        console.log('Success:', responseData);
         showSuccess('Article saved successfully!');
         // 延迟刷新，让用户看到成功提示
         setTimeout(() => {

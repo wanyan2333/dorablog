@@ -1,6 +1,5 @@
 <script>
   export let images = [];
-  const items = images || [];
   
   // 处理图片URL，如果是相对路径则添加服务器地址
   function getImageUrl(src) {
@@ -14,7 +13,7 @@
 
 <div class="grid-wrap">
   <div class="grid">
-    {#each items as src, i}
+    {#each images as src, i}
       <figure class="cell" aria-label={`image-${i + 1}`}>
         <img src={getImageUrl(src)} alt={`image-${i + 1}`} loading="lazy" />
       </figure>
