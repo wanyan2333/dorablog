@@ -17,7 +17,7 @@
 
   // Toggle comments visibility
   let showComments = true;
-  
+
   function toggleComments() {
     showComments = !showComments;
   }
@@ -66,10 +66,9 @@
       });
 
       if (response.ok) {
-        const newComment = await response.json();
-        // Add the new comment to the beginning of the list
-        comments = [newComment, ...comments];
+        await response.json();
         newCommentContent = "";
+        loadComments(); // Reload comments to get the proper nested structure
       } else {
         console.error("Failed to submit comment");
       }
@@ -138,7 +137,7 @@
   <div class="comments-header">
     <h3>Comments</h3>
     <button class="toggle-comments-btn" on:click={toggleComments}>
-      {showComments ? 'Hide Comments' : 'Show Comments'}
+      {showComments ? "Hide Comments" : "Show Comments"}
     </button>
   </div>
 
@@ -202,7 +201,9 @@
     backdrop-filter: blur(10px);
     border-radius: 16px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    transition: background 0.3s ease, box-shadow 0.3s ease;
+    transition:
+      background 0.3s ease,
+      box-shadow 0.3s ease;
   }
 
   [data-theme="dark"] .comments-section {
@@ -242,7 +243,7 @@
   }
 
   .toggle-comments-btn::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: -100%;
