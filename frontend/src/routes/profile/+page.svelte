@@ -48,7 +48,7 @@
     
     // Load user data into form
     username = $userStore.username || '';
-    originalUsername = $userStore.username || ''; // 保存原始用户名
+    originalUsername = $userStore.username || '';
     realname = $userStore.realname || '';
     birthdate = $userStore.birthdate || '';
     description = $userStore.description || '';
@@ -57,10 +57,8 @@
     loading = false;
   });
   
-  // 实时检查用户名唯一性
   let usernameCheckTimeout;
   async function checkUsername() {
-    // 如果用户名没变，不需要检查
     if (username === originalUsername) {
       usernameError = '';
       usernameAvailable = true;
@@ -73,7 +71,6 @@
       return;
     }
     
-    // 用户名格式验证
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
       usernameError = 'Username can only contain letters, numbers, and underscores';
       usernameAvailable = false;
@@ -101,7 +98,6 @@
     }
   }
   
-  // 监听用户名变化
   $: if (editing && username && username !== originalUsername) {
     clearTimeout(usernameCheckTimeout);
     usernameCheckTimeout = setTimeout(checkUsername, 500);
@@ -116,7 +112,6 @@
     error = '';
     success = '';
     
-    // 验证用户名
     if (username !== originalUsername && !usernameAvailable) {
       error = usernameError || 'Please choose a different username';
       return;
@@ -201,7 +196,7 @@
       // Reload user data
       await loadMe();
       currentAvatarUrl = $userStore.avatarUrl || '';
-      originalUsername = username; // 更新原始用户名
+      originalUsername = username;
       usernameAvailable = true;
       usernameError = '';
       

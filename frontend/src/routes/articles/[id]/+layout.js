@@ -28,7 +28,7 @@ export const load = async ({ params, fetch }) => {
     
     // Helper function to get full image URL
     const getImageUrl = (url) => {
-      if (!url) return '/src/assets/images/article/header.png'; // 默认头图
+      if (!url) return '/src/assets/images/article/header.png';
       if (url.startsWith('http://') || url.startsWith('https://')) {
         return url;
       }
@@ -37,7 +37,7 @@ export const load = async ({ params, fetch }) => {
     
     // Helper function to get avatar URL with cache busting
     const getAvatarUrl = (url) => {
-      if (!url) return '/src/assets/images/avatar-placeholder.jpg'; // 默认头像
+      if (!url) return '/src/assets/images/avatar-placeholder.jpg';
       
       let fullUrl;
       if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -99,7 +99,7 @@ export const load = async ({ params, fetch }) => {
         title: 'Article not found',
         content: 'Sorry, we could not load this article.',
         date: new Date().toISOString(),
-        headerImage: '/src/assets/images/article/header.png', // 默认头图
+        headerImage: '/src/assets/images/article/header.png',
         images: [],
         author: {
           name: 'Unknown',

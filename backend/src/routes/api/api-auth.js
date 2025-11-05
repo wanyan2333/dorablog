@@ -10,18 +10,15 @@ import fs from 'fs';
 
 const router = Router();
 
-// 配置multer用于头像上传
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'avatars');
-    // 确保上传目录存在
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    // 生成唯一文件名：时间戳 + 随机数 + 原扩展名
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
     cb(null, 'avatar-' + uniqueSuffix + ext);
@@ -31,10 +28,9 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 2 * 1024 * 1024 // 2MB限制
+    fileSize: 2 * 1024 * 1024
   },
   fileFilter: function (req, file, cb) {
-    // 只允许图片文件
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
@@ -57,18 +53,15 @@ router.post("/register", async (req, res) => {
   console.log('Registration request received:', req.body);
   const { username, password, confirm, realname, birthdate, description, avatar } = req.body || {};
   
-  // 基本字段验证
   if (!username || !password || !confirm) {
     console.log('Missing required fields:', { username: !!username, password: !!password, confirm: !!confirm });
     return res.status(400).json({ error: "Missing field" });
   }
   
-  // 密码匹配验证
   if (password !== confirm) {
     return res.status(400).json({ error: "Passwords do not match" });
   }
   
-  // 密码强度验证
   const passwordValidation = validatePasswordStrength(password);
   if (!passwordValidation.isValid) {
     return res.status(400).json({ 
@@ -78,7 +71,6 @@ router.post("/register", async (req, res) => {
     });
   }
   
-  // 用户名验证
   if (username.length < 3) {
     return res.status(400).json({ error: "Username must be at least 3 characters long" });
   }
@@ -93,9 +85,6 @@ router.post("/register", async (req, res) => {
     console.log('Connecting to database...');
     const db = await getDatabase();
     console.log('Database connected successfully');
-    
-    // 使用改进的密码哈希
-    console.log('Hashing password...');
     const hash = await hashPassword(password);
     console.log('Password hashed successfully');
     
@@ -152,14 +141,12 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // 使用改进的密码验证
     const isValidPassword = await verifyPassword(password, user.passwordHash);
     if (!isValidPassword) {
       console.log(`Failed login attempt for user: ${username}`);
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    // 生成JWT token
     const token = jwt.sign(
       { 
         id: user.id, 
@@ -199,7 +186,6 @@ router.get('/userInfo', requireAuth, async (req, res) => {
   res.set('Cache-Control', 'no-store');
   
   try {
-    // 从数据库获取完整的用户信息
     const db = await getDatabase();
     const user = await db.get(
       'SELECT id, username, realname, birthdate, admin, description, avatarUrl FROM Users WHERE id = ?',
@@ -220,17 +206,13 @@ router.get('/userInfo', requireAuth, async (req, res) => {
   }
 });
 
-// 头像上传端点
 router.post("/upload-avatar", upload.single('avatar'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // 返回头像URL
     const avatarUrl = `/uploads/avatars/${req.file.filename}`;
-    
-    // 将图片信息保存到Images表
     const db = await getDatabase();
     await db.run(
       `INSERT INTO Images (url) VALUES (?)`,

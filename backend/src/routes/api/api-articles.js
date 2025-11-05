@@ -17,18 +17,15 @@ import path from "path";
 import fs from "fs";
 const router = express.Router();
 
-// 配置multer用于文章图片上传
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = path.join(process.cwd(), "public", "uploads", "articles");
-    // 确保上传目录存在
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    // 生成唯一文件名：时间戳 + 随机数 + 原扩展名
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     cb(null, "article-" + uniqueSuffix + ext);
@@ -38,10 +35,9 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB限制
+    fileSize: 10 * 1024 * 1024
   },
   fileFilter: function (req, file, cb) {
-    // 只允许图片文件
     if (file.mimetype.startsWith("image/")) {
       cb(null, true);
     } else {
@@ -140,7 +136,7 @@ router.post("/like/:id", requireAuth, async (req, res) => {
  */
 router.get("/:id/liked", requireAuth, async (req, res) => {
   const articleId = req.params.id;
-  const userId = req.user.id; // 从认证中间件获取用户ID
+  const userId = req.user.id;
 
   try {
     const db = await import("../../data/database.js").then((m) => m.getDatabase());
@@ -170,35 +166,22 @@ router.delete("/:id", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "Invalid article ID" });
     }
 
-    // 获取数据库连接
     const { getDatabase } = await import("../../data/database.js");
     const db = await getDatabase();
 
-    // 检查文章是否存在并获取作者信息
     const article = await db.get("SELECT userId FROM Articles WHERE id = ?", articleId);
     if (!article) {
       return res.status(404).json({ error: "Article not found" });
     }
 
-    // 检查权限：只有作者或管理员可以删除
     if (article.userId !== userId && !req.user.isAdmin) {
       return res.status(403).json({ error: "You don't have permission to delete this article" });
     }
 
-    // 删除相关数据（按照外键依赖顺序）
-    // 1. 删除文章评论
     await db.run("DELETE FROM Comments WHERE articleId = ?", articleId);
-
-    // 2. 删除文章点赞
     await db.run("DELETE FROM ArticleLike WHERE articleId = ?", articleId);
-
-    // 3. 删除文章标签
     await db.run("DELETE FROM ArticleTag WHERE articleId = ?", articleId);
-
-    // 4. 删除文章图片
     await db.run("DELETE FROM ArticleImg WHERE articleId = ?", articleId);
-
-    // 5. 最后删除文章本身
     await db.run("DELETE FROM Articles WHERE id = ?", articleId);
 
     return res.status(200).json({
@@ -231,7 +214,7 @@ router.get("/:id", (req, res) => {
 router.post("/", requireAuth, async (req, res) => {
   try {
     const { title, content, tag, headerImage, contentImages } = req.body;
-    const userId = req.user.id; // 从认证中间件获取用户ID
+    const userId = req.user.id;
 
     // Validate required fields
     if (!title || !content) {
@@ -247,14 +230,13 @@ router.post("/", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "Content must be less than 100,000 characters" });
     }
 
-    // Create article data
     const articleData = {
       title: title.trim(),
       content: content.trim(),
-      userId: userId, // 使用认证用户的ID
+      userId: userId,
       headerUrl: headerImage || null,
       tag: tag || null,
-      contentImages: contentImages || [] // 传递图片URL数组
+      contentImages: contentImages || []
     };
 
     // Create the article
@@ -288,28 +270,21 @@ router.put("/:id", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "Content is required" });
     }
 
-    // 获取数据库连接
     const { getDatabase } = await import("../../data/database.js");
     const db = await getDatabase();
 
-    // 检查文章是否存在并获取作者信息
     const article = await db.get("SELECT userId FROM Articles WHERE id = ?", articleId);
     if (!article) {
       return res.status(404).json({ error: "Article not found" });
     }
 
-    // 检查权限：只有作者或管理员可以编辑
     if (article.userId !== userId && !req.user.isAdmin) {
       return res.status(403).json({ error: "You don't have permission to edit this article" });
     }
 
-    // 更新文章内容
     await db.run("UPDATE Articles SET content = ? WHERE id = ?", [content.trim(), articleId]);
-
-    // 删除旧的内容图片
     await db.run("DELETE FROM ArticleImg WHERE articleId = ?", articleId);
 
-    // 添加新的内容图片
     if (contentImages && contentImages.length > 0) {
       for (const imageUrl of contentImages) {
         await db.run("INSERT INTO ArticleImg (articleId, imgUrl) VALUES (?, ?)", [
@@ -348,21 +323,17 @@ router.get("/:id/recommendations", async (req, res) => {
   }
 });
 
-// 文章图片上传端点（支持TinyMCE格式）
-// 前端已经保护了新建/编辑页面，所以这里不需要额外验证
 router.post("/upload-image", upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
 
-    // 返回图片URL
     const imageUrl = `/uploads/articles/${req.file.filename}`;
 
-    // 同时支持TinyMCE格式（location）和自定义格式（success + imageUrl）
     res.json({
-      location: imageUrl, // TinyMCE官方格式
-      success: true, // 自定义格式
+      location: imageUrl,
+      success: true,
       imageUrl: imageUrl,
       filename: req.file.filename
     });

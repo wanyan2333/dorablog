@@ -41,7 +41,7 @@
   z-index: 100;
   width: 100%;
   box-shadow: 0 2px 4px var(--shadow-color, rgba(0, 0, 0, 0.1));
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* 明确指定字体 */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .nav-container {
@@ -71,7 +71,7 @@
   font-size: 1.5rem;
   font-weight: bold;
   color: var(--navbar-text, #0066cc);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* 明确指定字体 */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .nav-links {
@@ -88,7 +88,7 @@
   color: var(--navbar-text, #0066cc);
   padding: 0.5rem 0;
   transition: color 0.2s ease;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* 明确指定字体 */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .nav-link:hover {
@@ -155,7 +155,6 @@
   color: var(--navbar-hover, #003399);
 }
 
-/* 响应式设计 */
 @media (max-width: 768px) {
   .nav-container {
     flex-direction: column;

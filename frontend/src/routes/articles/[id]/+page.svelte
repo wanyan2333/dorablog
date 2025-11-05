@@ -5,7 +5,6 @@
   import CommentsList from "$lib/components/comment/CommentsList.svelte";
 
   export let data;
-  // 使用响应式语句确保 article 在 data 更新时也更新
   $: article = data.article;
   const SIDEBAR_W = 400;
 </script>
@@ -49,7 +48,7 @@
     min-width: 300px;
     display: flex;
     flex-direction: column;
-    gap: 8px; /* 进一步减少文章和评论之间的间距 */
+    gap: 8px;
   }
 
   .aside {
@@ -65,8 +64,8 @@
       grid-template-columns: 1fr !important;
       padding-left: 40px;
       padding-right: 40px;
-      max-width: 800px; /* 限制最大宽度，增加留白 */
-      margin: 0 auto; /* 居中显示 */
+      max-width: 800px;
+      margin: 0 auto;
     }
 
     .main {
@@ -78,7 +77,6 @@
     }
   }
 
-  /* 更小屏幕的响应式调整 */
   @media (max-width: 768px) {
     .grid {
       padding-left: 20px;
