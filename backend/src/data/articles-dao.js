@@ -242,8 +242,6 @@ export async function toggleArticleLike(articleId, userId) {
     uid
   );
 
-  console.log("Existing like:", existing);
-  
   if (existing) {
     // unlike -> remove row
     const res = await db.run(
@@ -303,21 +301,13 @@ export async function createArticle(articleData) {
   }
   
   // Add content images if provided
-  console.log('contentImages received:', contentImages);
-  console.log('contentImages type:', typeof contentImages);
-  console.log('contentImages is array:', Array.isArray(contentImages));
-  
   if (contentImages && contentImages.length > 0) {
-    console.log('Saving content images:', contentImages);
     for (const imageUrl of contentImages) {
-      console.log('Inserting image URL:', imageUrl);
       await db.run(
         "INSERT INTO ArticleImg (articleId, imgUrl) VALUES (?, ?)",
         [articleId, imageUrl]
       );
     }
-  } else {
-    console.log('No content images to save');
   }
   
   // Return the created article

@@ -2,18 +2,10 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { userStore } from '$lib/session.js'; 
-  import { showError } from '$lib/toastStore.js'; // 添加这行导入
+  import { showError } from '$lib/toastStore.js';
+  import { API } from '$lib/api.js';
   
-  export let article = {
-    id: 1,
-    avatar: '/images/doraemon1.png',
-    title: 'Sample Article',
-    author: 'Steven Shi',
-    authorAvatar: '/images/avatar-placeholder.png',
-    excerpt: 'This semester have so much hard work which from COMPSCI...',
-    likes: 86,
-    comments: 5
-  };
+  export let article;
 
   $: isLoggedIn = $userStore !== null;
   $: currentUser = $userStore;
@@ -22,25 +14,21 @@
   let likeCount = article.likes || 0;
   let liked = false;
 
-  // 处理卡片点击跳转到文章详情页
   function handleCardClick() {
     goto(`/articles/${article.id}`);
   }
 
-  // 获取评论数和已点赞状态
   onMount(async () => {
     if (article.id) {
       try {
-        // 获取评论数
-        const response = await fetch(`http://localhost:3000/api/comments/articles/${article.id}`);
+        const response = await fetch(`${API}/api/comments/articles/${article.id}`);
         if (response.ok) {
           const comments = await response.json();
           commentCount = comments.length;
         }
 
-        // 检查已点赞状态（仅登录用户）
         if (isLoggedIn) {
-          const likedResponse = await fetch(`http://localhost:3000/api/articles/${article.id}/liked`, {
+          const likedResponse = await fetch(`${API}/api/articles/${article.id}/liked`, {
             credentials: 'include'
           });
           if (likedResponse.ok) {
@@ -54,19 +42,16 @@
     }
   });
 
- // 修改 handleLikeClick 函数
   async function handleLikeClick(event) {
     event.stopPropagation();
     
-    // 直接使用 isLoggedIn 变量判断是否登录
     if (!isLoggedIn) {
       showError('Please log in to like articles');
       return;
     }
     
-    // 如果已登录，执行点赞逻辑
     try {
-      const response = await fetch(`http://localhost:3000/api/articles/like/${article.id}`, {
+      const response = await fetch(`${API}/api/articles/like/${article.id}`, {
         method: 'POST',
         credentials: 'include'
       });
@@ -74,7 +59,6 @@
       if (response.ok) {
         const result = await response.json();
         likeCount = result.likeCount;
-        // 切换已点赞状态
         liked = !liked;
       } else if (response.status === 401) {
         showError('You need to log in to like articles');
@@ -90,12 +74,10 @@
 </script>
 
 <div class="article-card" on:click={handleCardClick} role="button" tabindex="0" on:keydown={(e) => e.key === 'Enter' && handleCardClick()}>
-  <!-- 主图 - 填满顶部区域 -->
   <div class="main-image-container">
     <img src={article.avatar} alt={article.title} class="main-image" />
   </div>
   
-  <!-- 文章内容 -->
   <div class="content">
     <h3 class="title">{article.title}</h3>
     <div class="author-info">
@@ -104,7 +86,6 @@
     </div>
     <p class="excerpt">{article.excerpt}</p>
     
-    <!-- 互动按钮 - 固定在左下角 -->
    <div class="interaction-container" on:click|stopPropagation>
       <span class="like" class:liked={liked} on:click={handleLikeClick}>
         <img src='/src/assets/images/like-icon.png' alt="Like" />
@@ -129,7 +110,7 @@
   width: 250px;
   max-width: 100%;
   position: relative;
-  min-height: 400px; /* 拉长卡片 */
+  min-height: 400px;
   cursor: pointer;
 }
 
@@ -147,32 +128,30 @@
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
 }
 
-/* 主图容器 - 填满顶部区域 */
 .main-image-container {
   width: 100%;
   height: 160px;
   overflow: hidden;
   border-radius: 12px;
   margin-bottom: 1rem;
-  background-color: #d0eaff; /* 淡蓝色背景 */
+  background-color: #d0eaff;
   transition: background-color 0.3s ease;
 }
 
 [data-theme="dark"] .main-image-container {
-  background-color: #2d3748; /* 深色背景 */
+  background-color: #2d3748;
 }
 
 .main-image {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* 关键：确保图片填满容器 */
+  object-fit: cover;
   display: block;
 }
 
-/* 文章内容样式 */
 .content {
   text-align: left;
-  background-color: transparent; /* 透明背景 */
+  background-color: transparent;
   padding: 0;
 }
 
@@ -236,7 +215,6 @@
   color: #e2e8f0;
 }
 
-/* 互动按钮容器 - 固定在左下角 */
 .interaction-container {
   position: absolute;
   bottom: 1rem;
@@ -265,7 +243,6 @@
   color: #003399;
 }
 
-/* 已点赞状态 - 使用和详情页一样的浅紫色 */
 .like.liked {
   color: #667eea;
 }

@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { api } from '$lib/api';
+  import { api, API, getResourceUrl } from '$lib/api';
   import { userStore, loadMe } from '$lib/session';
   import { goto } from '$app/navigation';
   import AvatarSelector from '$lib/components/AvatarSelector.svelte';
@@ -48,21 +48,17 @@
     
     // Load user data into form
     username = $userStore.username || '';
-    originalUsername = $userStore.username || ''; // 保存原始用户名
+    originalUsername = $userStore.username || '';
     realname = $userStore.realname || '';
     birthdate = $userStore.birthdate || '';
     description = $userStore.description || '';
     currentAvatarUrl = $userStore.avatarUrl || '';
     
-    console.log('Profile loaded, avatar URL:', currentAvatarUrl);
-    
     loading = false;
   });
   
-  // 实时检查用户名唯一性
   let usernameCheckTimeout;
   async function checkUsername() {
-    // 如果用户名没变，不需要检查
     if (username === originalUsername) {
       usernameError = '';
       usernameAvailable = true;
@@ -75,7 +71,6 @@
       return;
     }
     
-    // 用户名格式验证
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
       usernameError = 'Username can only contain letters, numbers, and underscores';
       usernameAvailable = false;
@@ -96,7 +91,6 @@
         usernameAvailable = true;
       }
     } catch (e) {
-      console.error('Username check error:', e);
       usernameError = `Unable to check username`;
       usernameAvailable = false;
     } finally {
@@ -104,7 +98,6 @@
     }
   }
   
-  // 监听用户名变化
   $: if (editing && username && username !== originalUsername) {
     clearTimeout(usernameCheckTimeout);
     usernameCheckTimeout = setTimeout(checkUsername, 500);
@@ -119,7 +112,6 @@
     error = '';
     success = '';
     
-    // 验证用户名
     if (username !== originalUsername && !usernameAvailable) {
       error = usernameError || 'Please choose a different username';
       return;
@@ -178,7 +170,7 @@
         updateData.password = newPassword;
       }
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/users/me`, {
+      const response = await fetch(`${API}/api/users/me`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
@@ -204,8 +196,7 @@
       // Reload user data
       await loadMe();
       currentAvatarUrl = $userStore.avatarUrl || '';
-      console.log('Profile updated, new avatar URL:', currentAvatarUrl);
-      originalUsername = username; // 更新原始用户名
+      originalUsername = username;
       usernameAvailable = true;
       usernameError = '';
       
@@ -215,7 +206,6 @@
       }, 5000);
       
     } catch (e) {
-      console.error('Save profile error:', e);
       error = e.message || 'Failed to update profile';
     } finally {
       saving = false;
@@ -229,7 +219,7 @@
     }
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/users/me`, {
+      const response = await fetch(`${API}/api/users/me`, {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -306,14 +296,10 @@
             <div class="avatar-display">
               {#if currentAvatarUrl}
                 <img 
-                  src={currentAvatarUrl.startsWith('http') || currentAvatarUrl.startsWith('/avatars/') 
-                    ? currentAvatarUrl 
-                    : `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${currentAvatarUrl}`
-                  } 
+                  src={getResourceUrl(currentAvatarUrl)} 
                   alt={username} 
                   class="avatar-large"
                   on:error={(e) => {
-                    console.error('Avatar failed to load:', currentAvatarUrl);
                     e.target.style.display = 'none';
                     e.target.nextElementSibling.style.display = 'flex';
                   }}
@@ -368,14 +354,10 @@
               <div class="current-avatar">
                 {#if currentAvatarUrl}
                   <img 
-                    src={currentAvatarUrl.startsWith('http') || currentAvatarUrl.startsWith('/avatars/') 
-                      ? currentAvatarUrl 
-                      : `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${currentAvatarUrl}`
-                    } 
+                    src={getResourceUrl(currentAvatarUrl)} 
                     alt={username} 
                     class="avatar-medium"
                     on:error={(e) => {
-                      console.error('Current avatar failed to load:', currentAvatarUrl);
                       e.target.style.display = 'none';
                     }}
                   />

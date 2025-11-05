@@ -4,7 +4,6 @@
 export const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export async function api(path, options = {}) {
-  // 如果是FormData，不设置Content-Type，让浏览器自动设置
   const isFormData = options.body instanceof FormData;
   const headers = isFormData 
     ? { ...(options.headers || {}) }
@@ -27,12 +26,21 @@ export async function api(path, options = {}) {
   return data;
 }
 
-// 获取所有文章列表
 export async function getArticles() {
   return await api('/api/articles');
 }
 
-// 根据ID获取单篇文章
 export async function getArticleById(id) {
   return await api(`/api/articles/${id}`);
+}
+
+export function getResourceUrl(path) {
+  if (!path) return '';
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  if (path.startsWith('/avatars/')) {
+    return path;
+  }
+  return `${API}${path}`;
 }

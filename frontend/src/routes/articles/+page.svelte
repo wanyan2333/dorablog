@@ -1,39 +1,33 @@
 <script>
   import { onMount } from 'svelte';
-  import { flip } from 'svelte/animate'; // 导入 flip 动画
-  import { fade } from 'svelte/transition'; // 导入 fade 过渡效果
+  import { flip } from 'svelte/animate';
+  import { fade } from 'svelte/transition';
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores'; // 导入 page store 用于读取URL参数
-  import { getArticles } from '$lib/api.js';
+  import { page } from '$app/stores';
+  import { getArticles, API, getResourceUrl } from '$lib/api.js';
   import ArticleCard from '$lib/components/ArticleCard.svelte';
   import { userStore } from '$lib/session.js';
 
-  // 文章数据
   let allArticles = [];
   let displayedArticles = [];
   let loading = true;
-  let isRefreshing = false; // 用于刷新时的加载状态（不会完全替换页面）
+  let isRefreshing = false;
   let error = null;
 
-  // 搜索、排序和筛选状态
   let searchKeyword = '';
   let sortBy = 'date'; // 'date', 'title', 'username'
   let sortOrder = 'desc'; // 'asc' or 'desc'
-  let selectedTag = ''; // 选中的标签
-  let availableTags = []; // 所有可用标签
-  let showMyLikes = false; // 是否只显示我点赞的文章
+  let selectedTag = '';
+  let availableTags = [];
+  let showMyLikes = false;
 
-  // 分页状态
   let currentPage = 1;
-  let pageSize = 6; // 每页显示6篇文章
+  let pageSize = 6;
 
-  // 搜索防抖定时器
   let searchTimeout;
   
-  // 用户登录状态
   $: isLoggedIn = $userStore !== null;
 
-  // 从URL参数读取页码
   $: {
     const urlPage = parseInt($page.url.searchParams.get('page')) || 1;
     if (urlPage !== currentPage && urlPage >= 1) {
@@ -41,16 +35,14 @@
     }
   }
 
-  // 加载所有文章和标签
   onMount(async () => {
     await loadTags();
-    await loadArticles(true); // 初始加载
+    await loadArticles(true);
   });
 
-  // 加载所有标签
   async function loadTags() {
     try {
-      const response = await fetch('http://localhost:3000/api/articles/tags');
+      const response = await fetch(`${API}/api/articles/tags`);
       if (response.ok) {
         availableTags = await response.json();
       }
@@ -59,10 +51,8 @@
     }
   }
 
-  // 加载文章（支持标签筛选和"我的点赞"筛选）
   async function loadArticles(isInitialLoad = false) {
     try {
-      // 初始加载时显示全屏loading，刷新时使用小的刷新指示器
       if (isInitialLoad) {
         loading = true;
       } else {
@@ -70,22 +60,19 @@
       }
       error = null;
       
-      let url = 'http://localhost:3000/api/articles';
+      let url = `${API}/api/articles`;
       
-      // 如果显示"我的点赞"
       if (showMyLikes) {
-        url = 'http://localhost:3000/api/articles/liked';
+        url = `${API}/api/articles/liked`;
       } else if (selectedTag) {
-        // 否则如果有选中的标签，添加tag参数
         url += `?tag=${encodeURIComponent(selectedTag)}`;
       }
       
       const response = await fetch(url, {
-        credentials: 'include' // 添加认证信息（用于"我的点赞"）
+        credentials: 'include'
       });
       
       if (!response.ok && showMyLikes && response.status === 401) {
-        // 未登录时访问"我的点赞"
         error = 'Please log in to view your liked articles.';
         allArticles = [];
         displayedArticles = [];
@@ -96,7 +83,6 @@
       
       const articles = await response.json();
       
-      // 处理文章数据
       allArticles = articles.map(article => ({
         id: article.id,
         title: article.title,
@@ -122,22 +108,17 @@
     }
   }
 
-  // 搜索功能（在已筛选的文章中搜索）
   async function performSearch() {
     if (!searchKeyword.trim() && !selectedTag) {
-      // 如果搜索框为空且没有选标签，重新加载所有文章
       await loadArticles();
       return;
     }
 
     if (!searchKeyword.trim()) {
-      // 如果只有标签筛选，没有搜索关键词，重新加载该标签的文章
       await loadArticles();
       return;
     }
 
-    // 如果有搜索关键词，在当前显示的文章中进行客户端搜索
-    // 这样可以叠加标签筛选和搜索功能
     const keyword = searchKeyword.toLowerCase();
     displayedArticles = allArticles.filter(article => {
       return article.title.toLowerCase().includes(keyword) ||
@@ -148,37 +129,31 @@
     sortArticles();
   }
   
-  // 标签筛选变化时重新加载文章
   async function handleTagChange() {
-    searchKeyword = ''; // 清空搜索框
-    showMyLikes = false; // 关闭"我的点赞"筛选
+    searchKeyword = '';
+    showMyLikes = false;
     await loadArticles();
   }
   
-  // 切换"我的点赞"筛选
   async function toggleMyLikes() {
     showMyLikes = !showMyLikes;
-    searchKeyword = ''; // 清空搜索框
-    selectedTag = ''; // 清空标签筛选
+    searchKeyword = '';
+    selectedTag = '';
     await loadArticles();
   }
 
-  // 排序功能
   function sortArticles() {
     displayedArticles = [...displayedArticles].sort((a, b) => {
       let compareResult = 0;
 
       switch (sortBy) {
         case 'title':
-          // 按标题排序（不区分大小写）
           compareResult = a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
           break;
         case 'username':
-          // 按用户名排序
           compareResult = (a.authorUsername || a.author).localeCompare(b.authorUsername || b.author, undefined, { sensitivity: 'base' });
           break;
         case 'date':
-          // 按日期排序
           compareResult = new Date(a.date) - new Date(b.date);
           break;
         default:
@@ -189,7 +164,6 @@
     });
   }
 
-  // 监听搜索输入变化（防抖500ms）
   $: {
     clearTimeout(searchTimeout);
     if (searchKeyword !== undefined) {
@@ -199,35 +173,24 @@
     }
   }
 
-  // 监听排序变化
   $: if (sortBy || sortOrder) {
     sortArticles();
   }
 
-  // 切换排序顺序
   function toggleSortOrder() {
     sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
   }
 
-  // 处理图片URL
   function getImageUrl(url) {
-    if (!url) return '/src/assets/images/article/header.png';
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    return `http://localhost:3000${url}`;
+    return getResourceUrl(url) || '/src/assets/images/article/header.png';
   }
 
-  // 计算总页数
   $: totalPages = Math.ceil(displayedArticles.length / pageSize);
 
-  // 当筛选条件变化导致总页数减少时，确保当前页不超过总页数
   $: if (displayedArticles.length !== undefined && currentPage > totalPages && totalPages > 0) {
-    // 直接更新URL到第一页（使用 replaceState 避免在历史记录中留下无效页面）
     updatePageUrl(1, true);
   }
 
-  // 更新URL中的页码参数
   function updatePageUrl(page, replace = false) {
     if (typeof window !== 'undefined') {
       const newUrl = new URL(window.location.href);
@@ -236,12 +199,10 @@
     }
   }
 
-  // 分页导航函数（更新URL参数以保持状态）
   function goToPage(page) {
     if (page >= 1 && page <= totalPages) {
       updatePageUrl(page, false);
       
-      // 滚动到页面顶部
       if (typeof window !== 'undefined') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -260,13 +221,11 @@
     }
   }
 
-  // 计算当前页显示的文章
   $: paginatedArticles = displayedArticles.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
-  // 准备显示的文章卡片数据（使用分页后的文章）
   $: articleCards = paginatedArticles.map(article => ({
     id: article.id,
     avatar: getImageUrl(article.headerUrl),
@@ -285,9 +244,7 @@
     <p class="page-subtitle">Discover and explore articles from our community</p>
   </div>
 
-  <!-- 搜索和排序控制栏 -->
   <div class="controls-bar">
-    <!-- 我的点赞按钮（最左边） -->
     {#if isLoggedIn}
       <button 
         class="my-likes-btn" 
@@ -303,7 +260,6 @@
       </button>
     {/if}
 
-    <!-- 标签筛选 -->
     <div class="filter-container">
       <label for="tag-filter" class="filter-label">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; margin-right: 4px;">
@@ -326,7 +282,6 @@
       </select>
     </div>
 
-    <!-- 排序控制 -->
     <div class="sort-container">
       <label for="sort-by" class="sort-label">Sort by:</label>
       <select id="sort-by" bind:value={sortBy} class="sort-select">
@@ -353,7 +308,6 @@
       </button>
     </div>
 
-    <!-- 搜索框（最右边） -->
     <div class="search-container">
       <div class="search-input-wrapper">
         <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -376,7 +330,6 @@
     </div>
   </div>
 
-  <!-- 结果信息和刷新指示器 -->
   <div class="results-info">
     <div class="results-text">
       {#if showMyLikes}
@@ -392,7 +345,6 @@
       {/if}
     </div>
     
-    <!-- 小的刷新指示器 -->
     {#if isRefreshing}
       <div class="small-spinner" transition:fade={{ duration: 200 }}>
         <svg width="20" height="20" viewBox="0 0 24 24">
@@ -406,7 +358,6 @@
     {/if}
   </div>
 
-  <!-- 文章列表 -->
   {#if loading}
     <div class="loading-container">
       <div class="spinner"></div>
@@ -441,7 +392,6 @@
       {/each}
     </div>
 
-    <!-- 分页导航 -->
     {#if totalPages > 1}
       <div class="pagination">
         <button 
@@ -530,7 +480,6 @@
   color: #ffffff !important;
 }
 
-  /* 搜索和排序控制栏 */
   .controls-bar {
     display: flex;
     gap: 1rem;
@@ -595,7 +544,6 @@
     transform: scale(1.1);
   }
 
-  /* 标签筛选控制 */
   .filter-container {
     display: flex;
     align-items: center;
@@ -643,7 +591,6 @@
     box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
   }
 
-  /* 排序控制 */
   .sort-container {
     display: flex;
     align-items: center;
@@ -697,7 +644,6 @@
     transform: translateY(-1px);
   }
 
-  /* 我的点赞按钮 */
   .my-likes-btn {
     display: flex;
     align-items: center;
@@ -749,7 +695,6 @@
     20%, 40% { transform: scale(0.95); }
   }
  
-/* 结果信息 */
 .results-info {
   display: flex;
   align-items: center;
@@ -775,7 +720,6 @@
   font-weight: 600;
 }
 
-/* 小的刷新指示器 */
 .small-spinner {
   display: flex;
   align-items: center;
@@ -793,7 +737,6 @@
   font-weight: 500;
 }
 
-/* 暗色模式支持 */
 [data-theme="dark"] .results-text p {
   color: #a0aec0;
 }
@@ -814,7 +757,6 @@
   color: #90cdf4;
 }
 
-  /* 文章网格 */
   .articles-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -823,7 +765,6 @@
     min-height: 600px;
   }
 
-  /* 加载状态 */
   .loading-container {
     display: flex;
     flex-direction: column;
@@ -852,7 +793,6 @@
     to { opacity: 1; }
   }
 
-  /* 错误状态 */
   .error-container {
     text-align: center;
     padding: 4rem 2rem;
@@ -881,7 +821,6 @@
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
   }
 
-  /* 无结果状态 */
   .no-results {
     text-align: center;
     padding: 4rem 2rem;
@@ -918,7 +857,6 @@
     color: #5568d3;
   }
 
-  /* 响应式设计 */
   @media (max-width: 768px) {
     .articles-page {
       padding: 1.5rem 1rem;
@@ -938,7 +876,7 @@
     }
 
     .sort-container {
-      justify-content: space-between;
+      justify-content: flex-start;
     }
 
     .articles-grid {
@@ -946,7 +884,6 @@
     }
   }
 
-  /* 深色模式支持 */
   [data-theme="dark"] .search-input,
   [data-theme="dark"] .sort-container,
   [data-theme="dark"] .sort-select {
@@ -971,7 +908,6 @@
     color: #e2e8f0;
   }
 
-  /* 分页样式 */
   .pagination {
     display: flex;
     justify-content: center;
@@ -1071,7 +1007,6 @@
     display: inline-block;
   }
 
-  /* 分页响应式 */
   @media (max-width: 768px) {
     .pagination {
       flex-wrap: wrap;
@@ -1095,13 +1030,11 @@
     }
   }
 
-  /* 深色模式分页 */
   [data-theme="dark"] .pagination {
     background: linear-gradient(to bottom, transparent, rgba(102, 126, 234, 0.08));
   }
 
   [data-theme="dark"] .pagination-btn {
-    /* 保持渐变色，深色模式下依然好看 */
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
   }

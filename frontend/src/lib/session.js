@@ -1,11 +1,13 @@
 import { writable } from 'svelte/store';
 
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 export const userStore = writable(null);
 
 
 export async function loadMe() {
   try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/userInfo`, {
+    const res = await fetch(`${API}/api/auth/userInfo`, {
       credentials: 'include'
     });
     if (!res.ok) return userStore.set(null);

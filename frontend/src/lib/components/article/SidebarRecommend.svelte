@@ -2,8 +2,8 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { userStore } from '$lib/session.js';
-  // 本次改动：导入 showError 函数用于显示错误通知
-  import { showSuccess, showError } from '$lib/toastStore.js'; 
+  import { showSuccess, showError } from '$lib/toastStore.js';
+  import { API, getResourceUrl } from '$lib/api.js'; 
   
   export let articleId = null;
   export let title = 'You may also like';
@@ -12,7 +12,6 @@
   let loading = true;
   let error = null;
   
-  // 添加用户状态检查（和主页、详情页一样的方式）
   $: isLoggedIn = $userStore !== null;
   $: currentUser = $userStore;
   
@@ -20,23 +19,20 @@
     if (!articleId) return;
     
     try {
-      const response = await fetch(`http://localhost:3000/api/articles/${articleId}/recommendations?limit=5`);
+      const response = await fetch(`${API}/api/articles/${articleId}/recommendations?limit=5`);
       if (response.ok) {
         recommendations = await response.json();
         
-        // 初始化文章状态
         recommendations.forEach(article => {
           article.isLoading = false;
           article.liked = false;
         });
         
-        // 只有登录用户才检查点赞状态
         if (isLoggedIn) {
-          // 并行检查每篇文章的点赞状态
           const likePromises = recommendations.map(async (article) => {
             try {
-              const likeResponse = await fetch(`http://localhost:3000/api/articles/${article.id}/liked`, {
-                credentials: 'include' // 添加认证凭据
+              const likeResponse = await fetch(`${API}/api/articles/${article.id}/liked`, {
+                credentials: 'include'
               });
               if (likeResponse.ok) {
                 const likeData = await likeResponse.json();
@@ -60,16 +56,13 @@
     }
   });
   
-  // 完全照搬主页的跳转逻辑
   function handleCardClick(articleId) {
     goto(`/articles/${articleId}`);
   }
 
-  // 完全照搬主页的点赞逻辑
   async function handleLikeClick(event, articleId) {
-    event.stopPropagation(); // 阻止事件冒泡到卡片点击
+    event.stopPropagation();
     
-    // 添加登录检查（和主页一样的方式）
     if (!isLoggedIn) {
       showError('Please log in to like articles');
       return;
@@ -81,17 +74,15 @@
     article.isLoading = true;
     
     try {
-      const response = await fetch(`http://localhost:3000/api/articles/like/${articleId}`, {
+      const response = await fetch(`${API}/api/articles/like/${articleId}`, {
         method: 'POST',
         credentials: 'include'
       });
       
       if (response.ok) {
         const result = await response.json();
-        // 更新本地点赞状态和数量
-        article.liked = !article.liked; // 切换状态
+        article.liked = !article.liked;
         article.likeCount = result.likeCount;
-        // 强制重新渲染
         recommendations = [...recommendations];
       } else if (response.status === 401) {
         showError('You need to log in to like articles');
@@ -125,11 +116,7 @@
 
   // Get full image URL
   function getImageUrl(url) {
-    if (!url) return '/src/assets/images/article/header.png'; // 默认头图
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    return `http://localhost:3000${url}`;
+    return getResourceUrl(url) || '/src/assets/images/article/header.png';
   }
 </script>
 
@@ -203,7 +190,6 @@
 </section>
 
 <style>
-  /* 保持原有样式不变 */
   .card {
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(10px);
@@ -415,7 +401,7 @@
     display: flex;
     gap: 4px;
     flex-wrap: wrap;
-    align-items: center; /* 与作者名字垂直居中对齐 */
+    align-items: center;
   }
 
   .article-tag {
@@ -430,7 +416,7 @@
     letter-spacing: 0.3px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     line-height: 1;
-    vertical-align: middle; /* 垂直居中对齐 */
+    vertical-align: middle;
   }
 
   .article-actions {

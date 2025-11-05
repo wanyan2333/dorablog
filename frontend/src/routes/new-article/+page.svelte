@@ -1,44 +1,37 @@
 <script>
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { api } from '$lib/api';
+  import { api, API, getResourceUrl } from '$lib/api';
   import { userStore } from '$lib/session';
   import Editor from '@tinymce/tinymce-svelte';
   import { showError } from '$lib/toastStore.js';
 
   import Footer from '$lib/components/Footer.svelte';
   
-  // 用户登录状态
   let isLoggedIn = false;
   let currentUser = null;
   
-  // Form data
   let title = '';
   let content = '';
   let selectedTag = '';
   let headerImage = null;
-  let uploadedImages = []; // 存储上传的图片URL
+  let uploadedImages = [];
   let contentImages = [];
   
-  // Form state
   let isSubmitting = false;
   let errors = {};
   
-  // 检查用户登录状态
   $: {
     isLoggedIn = !!$userStore;
     currentUser = $userStore;
   }
   
-  // 页面加载时检查登录状态
   onMount(() => {
     if (!isLoggedIn) {
-      // 直接跳转到登录页，不延迟
       goto('/login');
     }
   });
   
-  // Available tags (predefined) - 简化为5-6个主要标签
   const availableTags = [
     'Technology',
     'Lifestyle', 
@@ -48,43 +41,36 @@
     'News'
   ];
   
-  // TinyMCE configuration
   const editorConfig = {
     height: 400,
     menubar: 'file edit view insert format',
     plugins: 'image lists link anchor autolink charmap codesample emoticons media searchreplace table visualblocks wordcount',
-    toolbar: 'undo redo | blocks | bold italic | image link | alignleft aligncenter alignright | bullist numlist | removeformat',
+    toolbar: 'undo redo | blocks | bold italic underline | image link | bullist numlist | removeformat',
     content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; }',
     
-    // 使用CSS隐藏不需要的对话框字段
     content_css: false,
     branding: false,
     promotion: false,
     
-    // 图片上传配置 - 使用handler直接处理上传
     images_upload_handler: async (blobInfo, progress) => {
       return new Promise(async (resolve, reject) => {
         try {
-          // 1. 检查图片数量限制（最多9张）
           if (uploadedImages.length >= 9) {
             reject('Maximum 9 images allowed. Please remove some images before uploading more.');
             return;
           }
           
-          // 2. 验证文件类型
           const file = blobInfo.blob();
           if (!file.type.startsWith('image/')) {
             reject('Please select an image file');
             return;
           }
           
-          // 3. 验证文件大小（最大10MB）
           if (file.size > 10 * 1024 * 1024) {
             reject('File size must be less than 10MB');
             return;
           }
           
-          // 4. 验证文件扩展名
           const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
           const fileName = blobInfo.filename().toLowerCase();
           const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
@@ -93,23 +79,20 @@
             return;
           }
           
-          // 5. 上传到后端
           const formData = new FormData();
           formData.append('image', file, blobInfo.filename());
           
-          const response = await fetch('http://localhost:3000/api/articles/upload-image', {
+          const response = await fetch(`${API}/api/articles/upload-image`, {
             method: 'POST',
-            credentials: 'include', // 包含认证cookie
+            credentials: 'include',
             body: formData
           });
           
           const result = await response.json();
           
           if (result.success) {
-            const imageUrl = 'http://localhost:3000' + result.imageUrl;
-            // 保存图片URL到数组
+            const imageUrl = getResourceUrl(result.imageUrl);
             uploadedImages = [...uploadedImages, result.imageUrl];
-            console.log('Uploaded images:', uploadedImages);
             resolve(imageUrl);
           } else {
             reject('Upload failed: ' + (result.error || 'Unknown error'));
@@ -120,24 +103,19 @@
       });
     },
     
-    // 简化图片对话框配置
     image_advtab: false,
     image_title: false,
     image_description: false,
     image_dimensions: false,
     image_caption: false,
     
-    // 允许拖拽上传
     paste_data_images: true,
     
-    // 自定义对话框行为
     setup: (editor) => {
-      // 监听对话框打开
       editor.on('OpenWindow', (e) => {
         setTimeout(() => {
           const dialog = document.querySelector('.tox-dialog');
           if (dialog) {
-            // 查找并隐藏Class字段
             const formGroups = dialog.querySelectorAll('.tox-form__group');
             formGroups.forEach((group) => {
               const label = group.querySelector('label');
@@ -146,7 +124,6 @@
               }
             });
             
-            // 查找Upload标签并自动点击
             const tabs = dialog.querySelectorAll('.tox-dialog__body-nav-item');
             tabs.forEach((tab) => {
               const tabText = tab.textContent.toLowerCase();
@@ -158,57 +135,42 @@
         }, 10);
       });
       
-      // 自定义图片插入逻辑
       editor.on('NodeChange', (e) => {
-        // 查找新插入的图片
         const images = editor.getBody().querySelectorAll('img:not([data-processed])');
         images.forEach((img) => {
-          // 标记为已处理
           img.setAttribute('data-processed', 'true');
           
-          // 添加缩略图样式类
           img.classList.add('thumbnail-image');
           
-          // 检查编辑器内容
           const body = editor.getBody();
           const allImages = body.querySelectorAll('img.thumbnail-image');
           const textContent = editor.getContent({ format: 'text' }).trim();
           
-          // 如果是第一张图片
           if (allImages.length === 1) {
-            // 检查是否有文字内容
             const hasText = textContent && textContent.length > 0;
             
             if (!hasText) {
-              // 没有文字，在图片前添加空行
               const p = editor.getDoc().createElement('p');
               p.innerHTML = '<br>';
               body.insertBefore(p, body.firstChild);
             } else {
-              // 有文字，在文字后面新建一行插入图片
               const parent = img.parentNode;
               
-              // 创建一个新的段落来包含图片
               const imageContainer = editor.getDoc().createElement('p');
               
-              // 从原父节点移除图片
               if (parent) {
                 parent.removeChild(img);
               }
               
-              // 把图片放入新段落
               imageContainer.appendChild(img);
               
-              // 在body末尾添加新段落（文字后面）
               body.appendChild(imageContainer);
               
-              // 如果原来的段落现在是空的，删除它
               if (parent && parent.childNodes.length === 0 && parent.parentNode) {
                 parent.parentNode.removeChild(parent);
               }
             }
             
-            // 设置光标在第一张图片右边
             setTimeout(() => {
               const range = editor.getDoc().createRange();
               const sel = editor.selection.getSel();
@@ -219,9 +181,6 @@
               editor.focus();
             }, 10);
           } else {
-            // 不是第一张图片，在光标位置插入（光标应该在上一张图片右边）
-            // 图片会自动插入到光标位置，我们只需要确保它有正确的样式
-            // 然后把光标移到这张图片右边
             setTimeout(() => {
               const range = editor.getDoc().createRange();
               const sel = editor.selection.getSel();
@@ -235,7 +194,6 @@
         });
       });
       
-      // 注入CSS样式
       editor.on('init', () => {
         const style = editor.getDoc().createElement('style');
         style.textContent = `
@@ -257,7 +215,6 @@
   // TinyMCE API key
   const apiKey = 'z285vuatv7et9z4jdzehijd9c1gcajgfo9gbik4k63hpqqyf';
   
-  // User authentication check - 暂时禁用
   $: user = $userStore;
   
   // onMount(() => {
@@ -266,21 +223,17 @@
   //   }
   // });
   
-  // 图片验证函数
   function validateImage(file) {
     const errors = [];
     
-    // 验证文件类型
     if (!file.type.startsWith('image/')) {
       errors.push('Please select an image file');
     }
     
-    // 验证文件大小 (最大10MB)
     if (file.size > 10 * 1024 * 1024) {
       errors.push('File size must be less than 10MB');
     }
     
-    // 验证文件扩展名
     const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
     const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
     if (!allowedExtensions.includes(fileExtension)) {
@@ -310,16 +263,13 @@
       errors.tag = 'Please select a tag';
     }
     
-    // 验证头图（可选）
     if (headerImage) {
       const imageErrors = validateImage(headerImage);
       if (imageErrors.length > 0) {
         errors.headerImage = imageErrors.join(', ');
       }
     }
-    // 头图是可选的，不上传会使用默认图片
     
-    // 验证内容图片
     if (contentImages.length > 0) {
       for (let i = 0; i < contentImages.length; i++) {
         const imageErrors = validateImage(contentImages[i]);
@@ -342,26 +292,22 @@
     isSubmitting = true;
     
     try {
-      // 从content中移除所有图片标签，只保留文字
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = content.trim();
       
-      // 移除所有img标签
       const images = tempDiv.querySelectorAll('img');
       images.forEach(img => img.remove());
       
-      // 获取纯文字内容（保留其他HTML标签如p, br等）
       const contentWithoutImages = tempDiv.innerHTML.trim();
       
-      // 上传headerImage（如果有）
       let headerImageUrl = null;
       if (headerImage) {
         const formData = new FormData();
         formData.append('image', headerImage);
         
-        const uploadResponse = await fetch('http://localhost:3000/api/articles/upload-image', {
+        const uploadResponse = await fetch(`${API}/api/articles/upload-image`, {
           method: 'POST',
-          credentials: 'include', // 包含认证cookie
+          credentials: 'include',
           body: formData
         });
         
@@ -375,25 +321,19 @@
         title: title.trim(),
         content: contentWithoutImages,
         tag: selectedTag,
-        headerImage: headerImageUrl, // 发送URL而不是File对象
-        contentImages: uploadedImages // 发送图片URL数组
+        headerImage: headerImageUrl,
+        contentImages: uploadedImages
       };
-      
-      console.log('Submitting article:', articleData);
-      console.log('Content images array:', uploadedImages);
-      console.log('Content images count:', uploadedImages.length);
       
       const result = await api('/api/articles', {
         method: 'POST',
         body: JSON.stringify(articleData)
       });
       
-      // 如果到这里说明请求成功，跳转到文章详情页
       goto(`/articles/${result.article.id}`);
     } catch (error) {
       console.error('API Error:', error);
       
-      // 检查是否是未登录错误
       if (error.status === 401) {
         goto('/login');
       } else {
@@ -415,7 +355,7 @@
         return;
       }
       headerImage = file;
-      errors.headerImage = ''; // 清除错误
+      errors.headerImage = '';
     }
   }
   
@@ -462,7 +402,7 @@
       
       <!-- Tag Selection -->
       <div class="form-group">
-        <label for="tag">Category *</label>
+        <label for="tag">Tag *</label>
         <div class="tag-selector">
           {#each availableTags as tag}
             <button 
@@ -486,7 +426,7 @@
       
       <!-- Header Image Upload -->
       <div class="form-group">
-        <label for="header-image">Header Image (Optional)</label>
+        <label for="header-image">Header Image (Max 1 Image)</label>
         <div class="image-upload">
           <input
             id="header-image"
@@ -552,7 +492,7 @@
 
 <style>
   .new-article-page {
-    min-height: calc(100vh - 120px); /* 减去导航栏和页脚的高度 */
+    min-height: calc(100vh - 120px);
     padding: 0.5rem 0 4rem 0;
   }
   
@@ -749,7 +689,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
-    max-width: 500px; /* 稍微加长上传框 */
+    max-width: 500px;
   }
   
   .upload-button {
@@ -771,15 +711,15 @@
   
   .image-preview {
     margin-top: 0.5rem;
-    max-width: 500px; /* 与上传框同宽 */
+    max-width: 500px;
     display: flex;
-    justify-content: center; /* 水平居中 */
+    justify-content: center;
   }
   
   .image-preview img {
     width: 150px;
     height: 150px;
-    object-fit: cover; /* 裁剪为方形 */
+    object-fit: cover;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }

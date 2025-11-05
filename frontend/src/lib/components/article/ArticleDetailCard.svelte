@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import ImageGrid from './ImageGrid.svelte';
-  import { api } from '../../api.js';
+  import { api, API, getResourceUrl } from '../../api.js';
   import Editor from '@tinymce/tinymce-svelte';
   import { userStore } from '$lib/session.js'; 
   
@@ -14,7 +14,7 @@
   export let articleId = null;
   export let initialLikeCount = 0;
   export let tags = [];
-  export let userId = null; // 文章作者的userId
+  export let userId = null;
 
   import likeIcon from '../../../assets/images/like-icon.png';
   import commentIcon from '../../../assets/images/comment.png';
@@ -25,17 +25,14 @@
   let commentCount = 0;
   let isLoading = false;
   
-  // 编辑模式相关
   let isEditing = false;
   let editedContent = '';
-  let uploadedImages = [...images]; // 复制现有图片
+  let uploadedImages = [...images];
   let isSaving = false;
   
-  // 格式化文本内容，确保显示时文字末尾没有空白
   $: displayText = (() => {
     if (!text) return '';
     let cleaned = text.trim();
-    // 使用循环持续清理末尾的空白
     let previousText = '';
     while (previousText !== cleaned) {
       previousText = cleaned;
@@ -49,29 +46,16 @@
     return cleaned;
   })();
 
-  // 添加用户状态检查（和主页一样的方式）
   $: isLoggedIn = $userStore !== null;
   $: currentUser = $userStore;
   
-  // 检查当前用户是否是文章作者（可以编辑/删除）
   $: canEditDelete = isLoggedIn && currentUser && userId && (currentUser.id === userId || currentUser.isAdmin);
-  
-  // 调试日志
-  $: if (articleId) {
-    console.log('=== Edit/Delete Permission Check ===');
-    console.log('isLoggedIn:', isLoggedIn);
-    console.log('currentUser:', currentUser);
-    console.log('Article userId:', userId);
-    console.log('canEditDelete:', canEditDelete);
-  }
 
-  // 加载文章数据（点赞状态和评论数）
   async function loadArticleData() {
     if (articleId) {
       try {
-        // Check like status (只有登录用户才检查)
         if (isLoggedIn) {
-          const likedResponse = await fetch(`http://localhost:3000/api/articles/${articleId}/liked`, {
+          const likedResponse = await fetch(`${API}/api/articles/${articleId}/liked`, {
             credentials: 'include'
           });
           if (likedResponse.ok) {
@@ -79,12 +63,11 @@
             liked = likedData.liked;
           }
         } else {
-          // 未登录时重置已点赞状态
           liked = false;
         }
         
         // Get comment count
-        const commentResponse = await fetch(`http://localhost:3000/api/comments/articles/${articleId}`);
+        const commentResponse = await fetch(`${API}/api/comments/articles/${articleId}`);
         if (commentResponse.ok) {
           const comments = await commentResponse.json();
           commentCount = comments.length;
@@ -95,7 +78,6 @@
     }
   }
 
-  // 当 articleId 改变时重新加载数据
   $: if (articleId) {
     loadArticleData();
   }
@@ -107,9 +89,7 @@
 
   // Toggle like/unlike
   async function handleLike() {
-    // 添加登录检查（和主页一样的方式）
     if (!isLoggedIn) {
-      // 本次改动：使用 Toast 通知替代 alert
       showError('Please log in to like articles');
       return;
     }
@@ -119,12 +99,12 @@
     isLoading = true;
     
     try {
-      const response = await fetch(`http://localhost:3000/api/articles/like/${articleId}`, {
+      const response = await fetch(`${API}/api/articles/like/${articleId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        credentials: 'include' // 添加认证凭据
+        credentials: 'include'
       });
       
       if (response.ok) {
@@ -132,15 +112,12 @@
         liked = data.liked;
         likeCount = data.likeCount;
       } else if (response.status === 401) {
-        // 本次改动：使用 Toast 通知替代 alert
         showError('You need to log in to like articles');
       } else {
-        // 本次改动：添加错误处理
         showError('Failed to like article');
       }
     } catch (error) {
       console.error('Error toggling like:', error);
-      // 本次改动：添加错误处理
       showError('Error liking article');
     } finally {
       isLoading = false;
@@ -164,42 +141,36 @@
     return colors[colorName] || colors.gray;
   }
   
-  // TinyMCE配置（与上传页相同）
   const apiKey = 'z285vuatv7et9z4jdzehijd9c1gcajgfo9gbik4k63hpqqyf';
   
   const editorConfig = {
     height: 400,
     menubar: 'file edit view insert format',
     plugins: 'image lists link anchor autolink charmap codesample emoticons media searchreplace table visualblocks wordcount',
-    toolbar: 'undo redo | blocks | bold italic | image link | alignleft aligncenter alignright | bullist numlist | removeformat',
+    toolbar: 'undo redo | blocks | bold italic underline | image link | bullist numlist | removeformat',
     content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; }',
     branding: false,
     promotion: false,
     
-    // 图片上传配置
     images_upload_handler: async (blobInfo, progress) => {
       return new Promise(async (resolve, reject) => {
         try {
-          // 检查图片数量限制（最多9张）
           if (uploadedImages.length >= 9) {
             reject('Maximum 9 images allowed. Please remove some images before uploading more.');
             return;
           }
           
-          // 验证文件类型
           const file = blobInfo.blob();
           if (!file.type.startsWith('image/')) {
             reject('Please select an image file');
             return;
           }
           
-          // 验证文件大小（最大10MB）
           if (file.size > 10 * 1024 * 1024) {
             reject('File size must be less than 10MB');
             return;
           }
           
-          // 验证文件扩展名
           const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
           const fileName = blobInfo.filename().toLowerCase();
           const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
@@ -208,11 +179,10 @@
             return;
           }
           
-          // 上传到后端
           const formData = new FormData();
           formData.append('image', file, blobInfo.filename());
           
-          const response = await fetch('http://localhost:3000/api/articles/upload-image', {
+          const response = await fetch(`${API}/api/articles/upload-image`, {
             method: 'POST',
             body: formData
           });
@@ -220,10 +190,8 @@
           const result = await response.json();
           
           if (result.success) {
-            const imageUrl = 'http://localhost:3000' + result.imageUrl;
-            // 保存图片URL到数组
+            const imageUrl = getResourceUrl(result.imageUrl);
             uploadedImages = [...uploadedImages, result.imageUrl];
-            console.log('Uploaded images:', uploadedImages);
             resolve(imageUrl);
           } else {
             reject('Upload failed: ' + (result.error || 'Unknown error'));
@@ -234,7 +202,6 @@
       });
     },
     
-    // 简化图片对话框配置
     image_advtab: false,
     image_title: false,
     image_description: false,
@@ -242,9 +209,7 @@
     image_caption: false,
     paste_data_images: true,
     
-    // 自定义对话框行为
     setup: (editor) => {
-      // 隐藏Class字段并切换到Upload标签
       editor.on('OpenWindow', (e) => {
         setTimeout(() => {
           const dialog = document.querySelector('.tox-dialog');
@@ -268,7 +233,6 @@
         }, 10);
       });
       
-      // 图片样式处理
       editor.on('NodeChange', (e) => {
         const images = editor.getBody().querySelectorAll('img:not([data-processed])');
         images.forEach((img) => {
@@ -322,7 +286,6 @@
         });
       });
       
-      // 注入CSS样式
       editor.on('init', () => {
         const style = editor.getDoc().createElement('style');
         style.textContent = `
@@ -341,15 +304,12 @@
     }
   };
   
-  // 进入编辑模式
   function startEditing() {
     isEditing = true;
     uploadedImages = [...images];
     
-    // 清理文本内容：移除末尾所有空段落和空白，确保图片紧贴在文字后面
     let cleanText = text.trim();
     
-    // 使用循环持续清理末尾的空白
     let previousText = '';
     while (previousText !== cleanText) {
       previousText = cleanText;
@@ -361,56 +321,42 @@
       cleanText = cleanText.replace(/(&nbsp;\s*)+$/gi, '');
     }
     
-    // 将文本内容和图片组合到编辑器中
     let contentWithImages = cleanText;
     
-    // 在文本内容后添加图片（作为缩略图）
     if (images && images.length > 0) {
-      // 添加一个新段落包含图片，紧接在文字后面
       contentWithImages += '<p>';
       images.forEach((imageUrl) => {
-        const fullUrl = imageUrl.startsWith('http') ? imageUrl : `http://localhost:3000${imageUrl}`;
+        const fullUrl = getResourceUrl(imageUrl);
         contentWithImages += `<img src="${fullUrl}" class="thumbnail-image" data-processed="true" style="width: 150px; height: 150px; object-fit: cover; display: inline-block; margin: 5px; border-radius: 8px; vertical-align: top;" />`;
       });
       contentWithImages += '</p>';
     }
     
-    console.log('Start editing - cleanText:', cleanText);
-    console.log('Start editing - contentWithImages:', contentWithImages);
-    
     editedContent = contentWithImages;
   }
   
-  // 取消编辑
   function cancelEditing() {
     isEditing = false;
     editedContent = '';
     uploadedImages = [...images];
   }
   
-  // 删除文章
   async function confirmDelete() {
     if (!articleId) return;
     
     try {
-      console.log('Deleting article:', articleId);
-      
-      const response = await fetch(`http://localhost:3000/api/articles/${articleId}`, {
+      const response = await fetch(`${API}/api/articles/${articleId}`, {
         method: 'DELETE',
-        credentials: 'include', // 包含认证cookie
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         }
       });
       
       const responseText = await response.text();
-      console.log('Delete response status:', response.status);
-      console.log('Delete response text:', responseText);
       
       if (response.ok) {
-        console.log('Article deleted successfully');
         showSuccess('Article deleted successfully!');
-        // 延迟跳转，让用户看到成功提示
         setTimeout(() => {
           window.location.href = '/';
         }, 1000);
@@ -429,17 +375,12 @@
     }
   }
   
-  // 保存编辑
   async function saveEditing() {
     if (isSaving) return;
     
     isSaving = true;
     
     try {
-      console.log('Starting save...');
-      console.log('editedContent:', editedContent);
-      
-      // 从content中提取所有图片URL
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = editedContent.trim() || '';
       
@@ -448,29 +389,23 @@
       
       imgs.forEach(img => {
         let src = img.getAttribute('src');
-        // 如果是完整URL，提取相对路径
-        if (src && src.startsWith('http://localhost:3000')) {
-          src = src.replace('http://localhost:3000', '');
+        if (src && src.startsWith(API)) {
+          src = src.replace(API, '');
         }
         if (src) {
           imageUrls.push(src);
         }
-        // 从DOM中移除图片
         img.remove();
       });
       
       let contentWithoutImages = tempDiv.innerHTML.trim();
       
-      console.log('Before cleaning:', contentWithoutImages);
-      
-      // 使用循环持续清理末尾的空白，直到没有变化为止
       let previousContent = '';
       while (previousContent !== contentWithoutImages) {
         previousContent = contentWithoutImages;
-        // 移除末尾的所有空段落、空标签和换行
         contentWithoutImages = contentWithoutImages.replace(/(<p><br\s*\/?><\/p>\s*)+$/gi, '');
-        contentWithoutImages = contentWithoutImages.replace(/(<p>&nbsp;<\/p>\s*)+$/gi, '');  // 清理 <p>&nbsp;</p>
-        contentWithoutImages = contentWithoutImages.replace(/(<p>(&nbsp;|\s)+<\/p>\s*)+$/gi, ''); // 清理包含 &nbsp; 或空格的 <p>
+        contentWithoutImages = contentWithoutImages.replace(/(<p>&nbsp;<\/p>\s*)+$/gi, '');
+        contentWithoutImages = contentWithoutImages.replace(/(<p>(&nbsp;|\s)+<\/p>\s*)+$/gi, '');
         contentWithoutImages = contentWithoutImages.replace(/<p><\/p>\s*$/gi, '');
         contentWithoutImages = contentWithoutImages.replace(/<p>\s+<\/p>\s*$/gi, '');
         contentWithoutImages = contentWithoutImages.replace(/<br\s*\/?>\s*$/gi, '');
@@ -478,13 +413,9 @@
         contentWithoutImages = contentWithoutImages.replace(/\s+$/g, '');
       }
       
-      console.log('After cleaning:', contentWithoutImages);
-      console.log('Image URLs:', imageUrls);
-      
-      // 调用后端API更新文章
-      const response = await fetch(`http://localhost:3000/api/articles/${articleId}`, {
+      const response = await fetch(`${API}/api/articles/${articleId}`, {
         method: 'PUT',
-        credentials: 'include', // 包含认证cookie
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },
@@ -495,14 +426,10 @@
       });
       
       const responseText = await response.text();
-      console.log('Response status:', response.status);
-      console.log('Response text:', responseText);
       
       if (response.ok) {
         const responseData = JSON.parse(responseText);
-        console.log('Success:', responseData);
         showSuccess('Article saved successfully!');
-        // 延迟刷新，让用户看到成功提示
         setTimeout(() => {
           window.location.reload();
         }, 1000);
@@ -573,7 +500,6 @@
       </div>
     {/if}
     
-    <!-- 只有作者或管理员才能看到编辑/删除按钮 -->
     {#if canEditDelete}
       <div class="article-actions">
         <button 

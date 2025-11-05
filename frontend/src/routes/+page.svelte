@@ -3,40 +3,26 @@
   import { onMount } from 'svelte';
   import ArticleCard from '$lib/components/ArticleCard.svelte';
   import Footer from '$lib/components/Footer.svelte';
-  import { getArticles } from '$lib/api.js';
+  import { getArticles, getResourceUrl } from '$lib/api.js';
 
-  // 动态文章数据
   let homepageArticles = [];
   let loading = true;
   let error = null;
 
-  // 每日一言数据
   let dailyQuote = {
     content: '正在加载每日一言...',
     author: ''
   };
   let quoteLoading = true;
 
-  // 页面加载时获取文章数据
   onMount(async () => {
-    // 获取每日一言
     fetchDailyQuote();
     
     try {
       const articles = await getArticles();
-      // 按点赞数量从大到小排序，然后取前4篇
       const sortedArticles = articles.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
       homepageArticles = sortedArticles.slice(0, 4).map(article => {
-        // 处理图片URL，如果是相对路径则添加服务器地址
-        const getImageUrl = (url) => {
-          if (!url) return '/src/assets/images/article/header.png'; // 默认头图
-          if (url.startsWith('http://') || url.startsWith('https://')) {
-            return url;
-          }
-          return `http://localhost:3000${url}`;
-        };
-        
-        const articleImage = getImageUrl(article.headerUrl);
+        const articleImage = getResourceUrl(article.headerUrl) || '/src/assets/images/article/header.png';
         
         console.log('文章:', article.title);
         console.log('使用图片:', articleImage);
@@ -45,11 +31,11 @@
           id: article.id,
           avatar: articleImage,
           title: article.title,
-          author: article.authorRealName || article.authorUsername || 'Unknown', // 优先使用真实姓名，然后用户名
-          authorAvatar: article.authorAvatar || '/src/assets/images/avatar-placeholder.png', // 直接使用数据库中的头像路径
+          author: article.authorRealName || article.authorUsername || 'Unknown',
+          authorAvatar: article.authorAvatar || '/src/assets/images/avatar-placeholder.png',
           excerpt: article.content ? article.content.substring(0, 100) + '...' : '暂无内容',
           likes: article.likeCount || 0,
-          comments: 0 // 暂时设为0，后续可以添加评论数量查询
+          comments: 0
         };
       });
       loading = false;
@@ -60,9 +46,7 @@
     }
   });
   
-  // 获取每日一言函数（保持原有逻辑不变）
   async function fetchDailyQuote() {
-    // 重置加载状态
     quoteLoading = true;
     
     try {
@@ -70,7 +54,6 @@
       let response = null;
       
       try {
-        // 主要：Quotable API
         response = await fetch('https://api.quotable.io/random?maxLength=120');
         if (response.ok) {
           data = await response.json();
@@ -85,7 +68,6 @@
       }
       
       try {
-        // 备用：Advice Slip API
         response = await fetch('https://api.adviceslip.com/advice');
         if (response.ok) {
           const result = await response.json();
@@ -100,7 +82,6 @@
         console.log('Advice Slip API 不可用，尝试其他 API');
       }
       
-      // 如果所有 API 都失败，使用默认值
       throw new Error('所有 API 都不可用');
       
     } catch (err) {
@@ -133,7 +114,6 @@
     </div>
   {/if}
   
-  <!-- 每日一言部分 -->
   <div class="daily-quote-section">
     <div class="daily-quote-container">
       <div class="quote-icon">❝</div>
@@ -150,7 +130,6 @@
           {/if}
         {/if}
       </div>
-      <!-- 刷新按钮 -->
       <button class="refresh-quote" on:click={fetchDailyQuote} aria-label="获取新名言">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
@@ -192,7 +171,6 @@
   -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
 }
 
-/* 深色模式：仅替换背景 */
 [data-theme="dark"] :global(.article-card) {
   background: linear-gradient(
     180deg,
@@ -201,7 +179,6 @@
   ) !important;
 }
 
-/* 每日一言部分样式（仅升级为液态玻璃，保持原有布局） */
 .daily-quote-section {
   display: flex;
   justify-content: center;
@@ -211,7 +188,6 @@
 
 .daily-quote-container {
   position: relative;
-  /* 液态玻璃背景 */
   background: linear-gradient(
     180deg,
     rgba(255, 255, 255, 0.65) 0%,
@@ -220,12 +196,11 @@
   backdrop-filter: blur(22px) saturate(150%);
   -webkit-backdrop-filter: blur(22px) saturate(150%);
   border-radius: 20px;
-  padding: 32px 60px; /* 保持原有padding */
+  padding: 32px 60px;
   box-shadow: 
     0 8px 32px rgba(0, 0, 0, 0.08),
     0 4px 12px rgba(0, 0, 0, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
-  /* 不添加边框，避免出现淡线 */
   max-width: 800px;
   width: 100%;
 }
@@ -262,7 +237,6 @@
   font-weight: 500;
 }
 
-/* 刷新按钮样式（轻微玻璃效果） */
 .refresh-quote {
   position: absolute;
   right: 20px;
@@ -291,7 +265,6 @@
   transform: rotate(180deg);
 }
 
-/* 加载动画 */
 .quote-loading {
   display: flex;
   flex-direction: column;
@@ -321,7 +294,6 @@
   }
 }
 
-/* 响应式设计 */
 @media (max-width: 1024px) {
   .articles-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -424,7 +396,6 @@
   background-color: #0052a3;
 }
 
-/* 深色模式支持 */
 [data-theme="dark"] .daily-quote-container {
   background: linear-gradient(
     180deg,

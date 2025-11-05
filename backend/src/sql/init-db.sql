@@ -14,8 +14,7 @@
 
 -- CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
--- 示例用户（username: Zachary, 密码: password123）
--- 下方为 bcrypt 10 轮哈希：`password123`
+-- Example users (password: password123)
 
 DROP TABLE IF EXISTS Messages;
 DROP TABLE IF EXISTS Users;
@@ -676,7 +675,7 @@ INSERT INTO ArticleLike (articleId, userId) VALUES
     (30, 10),
     (30, 1);
 
--- Dummy article-tag relations (每篇文章一个标签，按主题分配)
+-- Article-tag relations
 INSERT INTO ArticleTag (articleId, tag, color) VALUES
     -- Technology (4 articles): 1, 2, 3, 4
     (1, 'Technology', 'blue'),      -- Article 1: Web Development
