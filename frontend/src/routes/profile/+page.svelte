@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import { api } from '$lib/api';
+  import { api, API, getResourceUrl } from '$lib/api';
   import { userStore, loadMe } from '$lib/session';
   import { goto } from '$app/navigation';
   import AvatarSelector from '$lib/components/AvatarSelector.svelte';
@@ -54,8 +54,6 @@
     description = $userStore.description || '';
     currentAvatarUrl = $userStore.avatarUrl || '';
     
-    console.log('Profile loaded, avatar URL:', currentAvatarUrl);
-    
     loading = false;
   });
   
@@ -96,7 +94,6 @@
         usernameAvailable = true;
       }
     } catch (e) {
-      console.error('Username check error:', e);
       usernameError = `Unable to check username`;
       usernameAvailable = false;
     } finally {
@@ -178,7 +175,7 @@
         updateData.password = newPassword;
       }
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/users/me`, {
+      const response = await fetch(`${API}/api/users/me`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
@@ -204,7 +201,6 @@
       // Reload user data
       await loadMe();
       currentAvatarUrl = $userStore.avatarUrl || '';
-      console.log('Profile updated, new avatar URL:', currentAvatarUrl);
       originalUsername = username; // 更新原始用户名
       usernameAvailable = true;
       usernameError = '';
@@ -215,7 +211,6 @@
       }, 5000);
       
     } catch (e) {
-      console.error('Save profile error:', e);
       error = e.message || 'Failed to update profile';
     } finally {
       saving = false;
@@ -229,7 +224,7 @@
     }
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/users/me`, {
+      const response = await fetch(`${API}/api/users/me`, {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -306,14 +301,10 @@
             <div class="avatar-display">
               {#if currentAvatarUrl}
                 <img 
-                  src={currentAvatarUrl.startsWith('http') || currentAvatarUrl.startsWith('/avatars/') 
-                    ? currentAvatarUrl 
-                    : `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${currentAvatarUrl}`
-                  } 
+                  src={getResourceUrl(currentAvatarUrl)} 
                   alt={username} 
                   class="avatar-large"
                   on:error={(e) => {
-                    console.error('Avatar failed to load:', currentAvatarUrl);
                     e.target.style.display = 'none';
                     e.target.nextElementSibling.style.display = 'flex';
                   }}
@@ -368,14 +359,10 @@
               <div class="current-avatar">
                 {#if currentAvatarUrl}
                   <img 
-                    src={currentAvatarUrl.startsWith('http') || currentAvatarUrl.startsWith('/avatars/') 
-                      ? currentAvatarUrl 
-                      : `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${currentAvatarUrl}`
-                    } 
+                    src={getResourceUrl(currentAvatarUrl)} 
                     alt={username} 
                     class="avatar-medium"
                     on:error={(e) => {
-                      console.error('Current avatar failed to load:', currentAvatarUrl);
                       e.target.style.display = 'none';
                     }}
                   />

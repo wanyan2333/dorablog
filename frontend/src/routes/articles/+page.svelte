@@ -4,7 +4,7 @@
   import { fade } from 'svelte/transition'; // 导入 fade 过渡效果
   import { goto } from '$app/navigation';
   import { page } from '$app/stores'; // 导入 page store 用于读取URL参数
-  import { getArticles } from '$lib/api.js';
+  import { getArticles, API, getResourceUrl } from '$lib/api.js';
   import ArticleCard from '$lib/components/ArticleCard.svelte';
   import { userStore } from '$lib/session.js';
 
@@ -50,7 +50,7 @@
   // 加载所有标签
   async function loadTags() {
     try {
-      const response = await fetch('http://localhost:3000/api/articles/tags');
+      const response = await fetch(`${API}/api/articles/tags`);
       if (response.ok) {
         availableTags = await response.json();
       }
@@ -70,11 +70,11 @@
       }
       error = null;
       
-      let url = 'http://localhost:3000/api/articles';
+      let url = `${API}/api/articles`;
       
       // 如果显示"我的点赞"
       if (showMyLikes) {
-        url = 'http://localhost:3000/api/articles/liked';
+        url = `${API}/api/articles/liked`;
       } else if (selectedTag) {
         // 否则如果有选中的标签，添加tag参数
         url += `?tag=${encodeURIComponent(selectedTag)}`;
@@ -211,11 +211,7 @@
 
   // 处理图片URL
   function getImageUrl(url) {
-    if (!url) return '/src/assets/images/article/header.png';
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    return `http://localhost:3000${url}`;
+    return getResourceUrl(url) || '/src/assets/images/article/header.png';
   }
 
   // 计算总页数
@@ -938,7 +934,7 @@
     }
 
     .sort-container {
-      justify-content: space-between;
+      justify-content: flex-start;
     }
 
     .articles-grid {

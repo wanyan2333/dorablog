@@ -2,8 +2,8 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { userStore } from '$lib/session.js';
-  // 本次改动：导入 showError 函数用于显示错误通知
-  import { showSuccess, showError } from '$lib/toastStore.js'; 
+  import { showSuccess, showError } from '$lib/toastStore.js';
+  import { API, getResourceUrl } from '$lib/api.js'; 
   
   export let articleId = null;
   export let title = 'You may also like';
@@ -20,7 +20,7 @@
     if (!articleId) return;
     
     try {
-      const response = await fetch(`http://localhost:3000/api/articles/${articleId}/recommendations?limit=5`);
+      const response = await fetch(`${API}/api/articles/${articleId}/recommendations?limit=5`);
       if (response.ok) {
         recommendations = await response.json();
         
@@ -35,7 +35,7 @@
           // 并行检查每篇文章的点赞状态
           const likePromises = recommendations.map(async (article) => {
             try {
-              const likeResponse = await fetch(`http://localhost:3000/api/articles/${article.id}/liked`, {
+              const likeResponse = await fetch(`${API}/api/articles/${article.id}/liked`, {
                 credentials: 'include' // 添加认证凭据
               });
               if (likeResponse.ok) {
@@ -81,7 +81,7 @@
     article.isLoading = true;
     
     try {
-      const response = await fetch(`http://localhost:3000/api/articles/like/${articleId}`, {
+      const response = await fetch(`${API}/api/articles/like/${articleId}`, {
         method: 'POST',
         credentials: 'include'
       });
@@ -125,11 +125,7 @@
 
   // Get full image URL
   function getImageUrl(url) {
-    if (!url) return '/src/assets/images/article/header.png'; // 默认头图
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    return `http://localhost:3000${url}`;
+    return getResourceUrl(url) || '/src/assets/images/article/header.png';
   }
 </script>
 

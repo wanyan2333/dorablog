@@ -3,6 +3,8 @@ export const ssr = false;
 // Disable prerendering
 export const prerender = false;
 
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 // Load article data from database by ID
 export const load = async ({ params, fetch }) => {
   console.log('Loading article with ID:', params.id);
@@ -10,7 +12,7 @@ export const load = async ({ params, fetch }) => {
   try {
     // Add cache busting to ensure fresh data
     const cacheBuster = Date.now();
-    const response = await fetch(`http://localhost:3000/api/articles/${params.id}?_=${cacheBuster}`);
+    const response = await fetch(`${API}/api/articles/${params.id}?_=${cacheBuster}`);
     
     if (!response.ok) {
       throw new Error('Failed to fetch article');
@@ -30,7 +32,7 @@ export const load = async ({ params, fetch }) => {
       if (url.startsWith('http://') || url.startsWith('https://')) {
         return url;
       }
-      return `http://localhost:3000${url}`;
+      return `${API}${url}`;
     };
     
     // Helper function to get avatar URL with cache busting
@@ -46,10 +48,10 @@ export const load = async ({ params, fetch }) => {
         fullUrl = url; // Keep as-is, will be served by frontend
       } else if (url.startsWith('/uploads/')) {
         // Backend uploaded avatar
-        fullUrl = `http://localhost:3000${url}`;
+        fullUrl = `${API}${url}`;
       } else {
         // Fallback: assume it's a backend URL
-        fullUrl = `http://localhost:3000${url}`;
+        fullUrl = `${API}${url}`;
       }
       
       // Add timestamp to prevent browser caching

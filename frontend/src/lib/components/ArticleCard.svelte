@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import { userStore } from '$lib/session.js'; 
   import { showError } from '$lib/toastStore.js';
+  import { API } from '$lib/api.js';
   
   export let article;
 
@@ -23,7 +24,7 @@
     if (article.id) {
       try {
         // 获取评论数
-        const response = await fetch(`http://localhost:3000/api/comments/articles/${article.id}`);
+        const response = await fetch(`${API}/api/comments/articles/${article.id}`);
         if (response.ok) {
           const comments = await response.json();
           commentCount = comments.length;
@@ -31,7 +32,7 @@
 
         // 检查已点赞状态（仅登录用户）
         if (isLoggedIn) {
-          const likedResponse = await fetch(`http://localhost:3000/api/articles/${article.id}/liked`, {
+          const likedResponse = await fetch(`${API}/api/articles/${article.id}/liked`, {
             credentials: 'include'
           });
           if (likedResponse.ok) {
@@ -57,7 +58,7 @@
     
     // 如果已登录，执行点赞逻辑
     try {
-      const response = await fetch(`http://localhost:3000/api/articles/like/${article.id}`, {
+      const response = await fetch(`${API}/api/articles/like/${article.id}`, {
         method: 'POST',
         credentials: 'include'
       });

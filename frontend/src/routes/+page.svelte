@@ -3,7 +3,7 @@
   import { onMount } from 'svelte';
   import ArticleCard from '$lib/components/ArticleCard.svelte';
   import Footer from '$lib/components/Footer.svelte';
-  import { getArticles } from '$lib/api.js';
+  import { getArticles, getResourceUrl } from '$lib/api.js';
 
   // 动态文章数据
   let homepageArticles = [];
@@ -27,16 +27,7 @@
       // 按点赞数量从大到小排序，然后取前4篇
       const sortedArticles = articles.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
       homepageArticles = sortedArticles.slice(0, 4).map(article => {
-        // 处理图片URL，如果是相对路径则添加服务器地址
-        const getImageUrl = (url) => {
-          if (!url) return '/src/assets/images/article/header.png'; // 默认头图
-          if (url.startsWith('http://') || url.startsWith('https://')) {
-            return url;
-          }
-          return `http://localhost:3000${url}`;
-        };
-        
-        const articleImage = getImageUrl(article.headerUrl);
+        const articleImage = getResourceUrl(article.headerUrl) || '/src/assets/images/article/header.png';
         
         console.log('文章:', article.title);
         console.log('使用图片:', articleImage);

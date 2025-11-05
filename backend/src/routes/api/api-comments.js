@@ -68,7 +68,6 @@ router.post("/", requireAuth, async (req, res) => {
 
     return res.status(201).json(comment);
   } catch (error) {
-    console.error("Error creating comment:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -111,7 +110,6 @@ router.put("/:id", requireAuth, async (req, res) => {
 
     return res.status(200).json(updatedComment);
   } catch (error) {
-    console.error("Error updating comment:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -144,7 +142,6 @@ router.delete("/:id", requireAuth, async (req, res) => {
 
     return res.status(200).json({ message: "Comment deleted" });
   } catch (error) {
-    console.error("Error deleting comment:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 });

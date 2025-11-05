@@ -1,6 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { userStore, loadMe } from '$lib/session';
+  import { API, getResourceUrl } from '$lib/api';
 
   let open = false;
   $: user = $userStore;
@@ -19,7 +20,7 @@
   }
 
   async function logout() {
-    await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/logout`, {
+    await fetch(`${API}/api/auth/logout`, {
       method: 'POST',
       credentials: 'include'
     });
@@ -46,7 +47,7 @@
         <span class="ring">
           {#if user.avatarUrl}
             <img 
-              src={user.avatarUrl.startsWith('http') || user.avatarUrl.startsWith('/avatars/') ? user.avatarUrl : `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}${user.avatarUrl}`} 
+              src={getResourceUrl(user.avatarUrl)} 
               alt="avatar" 
               class="avatar" 
               on:error={(e) => {

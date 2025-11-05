@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import ImageGrid from './ImageGrid.svelte';
-  import { api } from '../../api.js';
+  import { api, API, getResourceUrl } from '../../api.js';
   import Editor from '@tinymce/tinymce-svelte';
   import { userStore } from '$lib/session.js'; 
   
@@ -62,7 +62,7 @@
       try {
         // Check like status (只有登录用户才检查)
         if (isLoggedIn) {
-          const likedResponse = await fetch(`http://localhost:3000/api/articles/${articleId}/liked`, {
+          const likedResponse = await fetch(`${API}/api/articles/${articleId}/liked`, {
             credentials: 'include'
           });
           if (likedResponse.ok) {
@@ -75,7 +75,7 @@
         }
         
         // Get comment count
-        const commentResponse = await fetch(`http://localhost:3000/api/comments/articles/${articleId}`);
+        const commentResponse = await fetch(`${API}/api/comments/articles/${articleId}`);
         if (commentResponse.ok) {
           const comments = await commentResponse.json();
           commentCount = comments.length;
@@ -110,7 +110,7 @@
     isLoading = true;
     
     try {
-      const response = await fetch(`http://localhost:3000/api/articles/like/${articleId}`, {
+      const response = await fetch(`${API}/api/articles/like/${articleId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -203,7 +203,7 @@
           const formData = new FormData();
           formData.append('image', file, blobInfo.filename());
           
-          const response = await fetch('http://localhost:3000/api/articles/upload-image', {
+          const response = await fetch(`${API}/api/articles/upload-image`, {
             method: 'POST',
             body: formData
           });
@@ -211,7 +211,7 @@
           const result = await response.json();
           
           if (result.success) {
-            const imageUrl = 'http://localhost:3000' + result.imageUrl;
+            const imageUrl = getResourceUrl(result.imageUrl);
             // 保存图片URL到数组
             uploadedImages = [...uploadedImages, result.imageUrl];
             resolve(imageUrl);
@@ -359,7 +359,7 @@
       // 添加一个新段落包含图片，紧接在文字后面
       contentWithImages += '<p>';
       images.forEach((imageUrl) => {
-        const fullUrl = imageUrl.startsWith('http') ? imageUrl : `http://localhost:3000${imageUrl}`;
+        const fullUrl = getResourceUrl(imageUrl);
         contentWithImages += `<img src="${fullUrl}" class="thumbnail-image" data-processed="true" style="width: 150px; height: 150px; object-fit: cover; display: inline-block; margin: 5px; border-radius: 8px; vertical-align: top;" />`;
       });
       contentWithImages += '</p>';
@@ -380,7 +380,7 @@
     if (!articleId) return;
     
     try {
-      const response = await fetch(`http://localhost:3000/api/articles/${articleId}`, {
+      const response = await fetch(`${API}/api/articles/${articleId}`, {
         method: 'DELETE',
         credentials: 'include', // 包含认证cookie
         headers: {
@@ -428,8 +428,8 @@
       imgs.forEach(img => {
         let src = img.getAttribute('src');
         // 如果是完整URL，提取相对路径
-        if (src && src.startsWith('http://localhost:3000')) {
-          src = src.replace('http://localhost:3000', '');
+        if (src && src.startsWith(API)) {
+          src = src.replace(API, '');
         }
         if (src) {
           imageUrls.push(src);
@@ -456,7 +456,7 @@
       }
       
       // 调用后端API更新文章
-      const response = await fetch(`http://localhost:3000/api/articles/${articleId}`, {
+      const response = await fetch(`${API}/api/articles/${articleId}`, {
         method: 'PUT',
         credentials: 'include', // 包含认证cookie
         headers: {

@@ -36,3 +36,18 @@ export async function getArticles() {
 export async function getArticleById(id) {
   return await api(`/api/articles/${id}`);
 }
+
+// 获取完整的资源URL（用于图片等静态资源）
+export function getResourceUrl(path) {
+  if (!path) return '';
+  // 如果已经是完整URL，直接返回
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  // 如果是静态资源（/avatars/开头），直接返回
+  if (path.startsWith('/avatars/')) {
+    return path;
+  }
+  // 其他情况拼接API地址
+  return `${API}${path}`;
+}

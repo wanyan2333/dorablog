@@ -1,21 +1,14 @@
 <script>
-  export let images = [];
+  import { getResourceUrl } from '../../api.js';
   
-  // 处理图片URL，如果是相对路径则添加服务器地址
-  function getImageUrl(src) {
-    if (!src) return '';
-    if (src.startsWith('http://') || src.startsWith('https://')) {
-      return src;
-    }
-    return `http://localhost:3000${src}`;
-  }
+  export let images = [];
 </script>
 
 <div class="grid-wrap">
   <div class="grid">
     {#each images as src, i}
       <figure class="cell" aria-label={`image-${i + 1}`}>
-        <img src={getImageUrl(src)} alt={`image-${i + 1}`} loading="lazy" />
+        <img src={getResourceUrl(src)} alt={`image-${i + 1}`} loading="lazy" />
       </figure>
     {/each}
   </div>

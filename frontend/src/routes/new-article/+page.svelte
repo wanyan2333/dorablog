@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { api } from '$lib/api';
+  import { api, API, getResourceUrl } from '$lib/api';
   import { userStore } from '$lib/session';
   import Editor from '@tinymce/tinymce-svelte';
   import { showError } from '$lib/toastStore.js';
@@ -97,7 +97,7 @@
           const formData = new FormData();
           formData.append('image', file, blobInfo.filename());
           
-          const response = await fetch('http://localhost:3000/api/articles/upload-image', {
+          const response = await fetch(`${API}/api/articles/upload-image`, {
             method: 'POST',
             credentials: 'include', // 包含认证cookie
             body: formData
@@ -106,7 +106,7 @@
           const result = await response.json();
           
           if (result.success) {
-            const imageUrl = 'http://localhost:3000' + result.imageUrl;
+            const imageUrl = getResourceUrl(result.imageUrl);
             // 保存图片URL到数组
             uploadedImages = [...uploadedImages, result.imageUrl];
             resolve(imageUrl);
@@ -358,7 +358,7 @@
         const formData = new FormData();
         formData.append('image', headerImage);
         
-        const uploadResponse = await fetch('http://localhost:3000/api/articles/upload-image', {
+        const uploadResponse = await fetch(`${API}/api/articles/upload-image`, {
           method: 'POST',
           credentials: 'include', // 包含认证cookie
           body: formData
@@ -457,7 +457,7 @@
       
       <!-- Tag Selection -->
       <div class="form-group">
-        <label for="tag">Category *</label>
+        <label for="tag">Tag *</label>
         <div class="tag-selector">
           {#each availableTags as tag}
             <button 
@@ -481,7 +481,7 @@
       
       <!-- Header Image Upload -->
       <div class="form-group">
-        <label for="header-image">Header Image (Optional)</label>
+        <label for="header-image">Header Image (Max 1 Image)</label>
         <div class="image-upload">
           <input
             id="header-image"
