@@ -2,7 +2,7 @@
   export let selectedAvatar = '';
   export let onAvatarSelect = () => {};
 
-  // 默认头像选项（图片）
+  // Default avatar option (image)
   const defaultAvatars = [
     { id: 'avatar-leo', src: '/avatars/avatar-leo.png', name: 'Leo' },
     { id: 'avatar-stevenshi', src: '/avatars/avatar-stevenshi.png', name: 'Steven' },
@@ -27,13 +27,13 @@
   function handleFileUpload(event) {
     const file = event.target.files[0];
     if (file) {
-      // 验证文件类型
+      // validate file type
       if (!file.type.startsWith('image/')) {
         alert('Please select an image file');
         return;
       }
       
-      // 验证文件大小 (最大2MB)
+      // validate file size (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
         alert('File size must be less than 2MB');
         return;
