@@ -45,7 +45,7 @@
     height: 400,
     menubar: 'file edit view insert format',
     plugins: 'image lists link anchor autolink charmap codesample emoticons media searchreplace table visualblocks wordcount',
-    toolbar: 'undo redo | blocks | bold italic | image link | alignleft aligncenter alignright | bullist numlist | removeformat',
+    toolbar: 'undo redo | blocks | bold italic underline | image link | bullist numlist | removeformat',
     content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; }',
     
     content_css: false,
