@@ -40,10 +40,13 @@ see the APIsDoc.md in backend folder
 Homepage:
 
 Newpost:
+This page is used to create and publish new articles. It includes a rich text editor that supports formatting options such as bold, italic, and underline. You can add up to one header image and insert up to nine images within the content. Each article must include a title and an appropriate tag (Technology, Entertainment, Health, Travel, Lifestyle, or News). It’s very easy to use: enter your title, select a tag, write your content, add images if needed, and then click “Publish Article”. After publishing, you will be automatically redirected to the article’s view page. If the user is not logged in, this page will automatically redirect to the login page.
 
 Blogdetail:
+This page displays the full content of an article, including the title, text, images, tags, author information, and publication date. The page provides a like button that shows the current number of likes, and the sidebar displays recommended related articles, which can be clicked to navigate to their content pages. Below the article, there is a comments section with an option to hide all comments with one click. Users can view existing comments and post new ones, but liking or commenting requires being logged in. If you are the author or an administrator, you will also see edit and delete options below the article, allowing you to click “Edit Article” to modify the content or “Delete Article” to remove it.
 
 Articles:
+This is the main article browsing page, where all blog posts are displayed as cards. Each card shows the cover image, article title, author, number of likes, and number of comments. The page provides a search function, tag filters, and sorting options (by date, title, or author). Logged-in users can also view the posts they have liked via the “My Likes” button. Users can enter keywords in the search box to search, select tags to filter, and choose a sorting method to find the desired article. Click any card to enter the article’s detail page.
 
 Login:
 
