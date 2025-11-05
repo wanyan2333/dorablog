@@ -1,24 +1,20 @@
 import bcrypt from "bcrypt";
 
-/**
- * 密码哈希工具类
- * 提供更强的密码安全功能
- */
 
-// 配置参数
-const BCRYPT_ROUNDS = 10; // 与数据库中的示例数据保持一致
+// Configuration parameters
+const BCRYPT_ROUNDS = 10; 
 const MIN_PASSWORD_LENGTH = 6;
 const MAX_PASSWORD_LENGTH = 128;
 
 /**
- * 简化的密码验证 - 只检查长度
- * @param {string} password - 密码
- * @returns {Object} - 验证结果
+ * Simplified password verification - only check length
+ * @param {string} password - password to validate
+ * @returns {Object} - validation result
  */
 export function validatePasswordStrength(password) {
   const errors = [];
 
-  // 只检查长度
+  // Check length
   if (password.length < MIN_PASSWORD_LENGTH) {
     errors.push(`Password must be at least ${MIN_PASSWORD_LENGTH} characters long`);
   }
@@ -36,19 +32,19 @@ export function validatePasswordStrength(password) {
 }
 
 /**
- * 哈希密码
- * @param {string} password - 原始密码
- * @returns {Promise<string>} - 哈希后的密码
+ * Hash a password
+ * @param {string} password - orignal password
+ * @returns {Promise<string>} - hashed password
  */
 export async function hashPassword(password) {
   try {
-    // 验证密码强度
+    // Validate password strength
     const validation = validatePasswordStrength(password);
     if (!validation.isValid) {
       throw new Error(`Password validation failed: ${validation.errors.join(', ')}`);
     }
 
-    // 生成盐并哈希密码
+    // Generate salt and hash password
     const saltRounds = BCRYPT_ROUNDS;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     
@@ -61,10 +57,10 @@ export async function hashPassword(password) {
 }
 
 /**
- * 验证密码
- * @param {string} password - 原始密码
- * @param {string} hashedPassword - 哈希后的密码
- * @returns {Promise<boolean>} - 验证结果
+ * Verify a password
+ * @param {string} password - original password
+ * @param {string} hashedPassword - hashed password
+ * @returns {Promise<boolean>} - verification result
  */
 export async function verifyPassword(password, hashedPassword) {
   try {
@@ -76,9 +72,9 @@ export async function verifyPassword(password, hashedPassword) {
 }
 
 /**
- * 生成密码提示
- * @param {string} password - 密码
- * @returns {Array} - 提示数组
+ * Generate password hints
+ * @param {string} password - password
+ * @returns {Array} - hints array
  */
 export function generatePasswordHints(password) {
   const hints = [];

@@ -10,7 +10,7 @@
   let error = null;
 
   let dailyQuote = {
-    content: '正在加载每日一言...',
+    content: 'Daily Quote is loading...',
     author: ''
   };
   let quoteLoading = true;
@@ -24,8 +24,8 @@
       homepageArticles = sortedArticles.slice(0, 4).map(article => {
         const articleImage = getResourceUrl(article.headerUrl) || '/src/assets/images/article/header.png';
         
-        console.log('文章:', article.title);
-        console.log('使用图片:', articleImage);
+        console.log('Article:', article.title);
+        console.log('Using image:', articleImage);
         
         return {
           id: article.id,
@@ -33,14 +33,14 @@
           title: article.title,
           author: article.authorRealName || article.authorUsername || 'Unknown',
           authorAvatar: article.authorAvatar || '/src/assets/images/avatar-placeholder.png',
-          excerpt: article.content ? article.content.substring(0, 100) + '...' : '暂无内容',
+          excerpt: article.content ? article.content.substring(0, 100) + '...' : 'No content',
           likes: article.likeCount || 0,
           comments: 0
         };
       });
       loading = false;
     } catch (err) {
-      console.error('获取文章数据失败:', err);
+      console.error('Failed to get article data:', err);
       error = err.message;
       loading = false;
     }
@@ -64,7 +64,7 @@
           return;
         }
       } catch (e) {
-        console.log('Quotable API 不可用，尝试其他 API');
+        console.log('The Quotable API is unavailable. Try other apis');
       }
       
       try {
@@ -79,13 +79,13 @@
           return;
         }
       } catch (e) {
-        console.log('Advice Slip API 不可用，尝试其他 API');
+        console.log('The Advice Slip API is unavailable. Try other apis');
       }
       
-      throw new Error('所有 API 都不可用');
+      throw new Error('All apis are unavailable');
       
     } catch (err) {
-      console.error('获取每日一言失败:', err);
+      console.error('Failed to get daily quote:', err);
       dailyQuote = {
         content: 'The future belongs to those who believe in the beauty of their dreams',
         author: '— -Eleanor Roosevelt'
@@ -99,12 +99,12 @@
 <main class="home-main">
   {#if loading}
     <div class="loading">
-      <p>正在加载文章...</p>
+      <p>Loading articles...</p>
     </div>
   {:else if error}
     <div class="error">
-      <p>加载文章失败: {error}</p>
-      <button on:click={() => window.location.reload()}>重新加载</button>
+      <p>Failed to load the article: {error}</p>
+      <button on:click={() => window.location.reload()}>Reload</button>
     </div>
   {:else}
     <div class="articles-grid">
@@ -130,7 +130,7 @@
           {/if}
         {/if}
       </div>
-      <button class="refresh-quote" on:click={fetchDailyQuote} aria-label="获取新名言">
+      <button class="refresh-quote" on:click={fetchDailyQuote} aria-label="Get a new quote">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
           <path d="M3 3v5h5"/>

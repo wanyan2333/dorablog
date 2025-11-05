@@ -9,15 +9,15 @@
   let usernameChecking=false, usernameAvailable=null;
   let selectedAvatar='', customAvatarFile=null;
 
-  // 实时检查用户名唯一性
+  // Check the uniqueness of the username in real time
   async function checkUsername() {
     if (!username || username.length < 3) {
       usernameError = 'Username must be at least 3 characters';
       usernameAvailable = false;
       return;
     }
-    
-    // 用户名格式验证
+
+    // Username format validation
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
       usernameError = 'Username can only contain letters, numbers, and underscores';
       usernameAvailable = false;
@@ -49,7 +49,7 @@
     }
   }
 
-  // 简化的密码验证 - 只检查长度
+  // Simplified password validation - only checks length
   function validatePassword(pwd) {
     if (pwd.length < 6) {
       return 'Password must be at least 6 characters';
@@ -57,19 +57,19 @@
     return '';
   }
 
-  // 监听密码变化
+  // Listen to password changes
   $: if (password) {
     passwordError = validatePassword(password);
   }
 
-  // 监听用户名变化，防抖处理
+  // Debounce username checking
   let usernameTimeout;
   $: if (username) {
     clearTimeout(usernameTimeout);
     usernameTimeout = setTimeout(checkUsername, 500);
   }
 
-  // 头像选择处理
+  // Avatar selection handling
   function handleAvatarSelect(avatarId, file = null) {
     console.log('Avatar selected:', avatarId, file);
     selectedAvatar = avatarId;
@@ -79,22 +79,22 @@
 
   async function submit(){
     error=''; success=''; busy=true;
-    
-    // 验证密码匹配
-    if(password!==confirm){ 
-      error='Passwords do not match'; 
-      busy=false; 
-      return; 
+
+    // Validate password match
+    if(password!==confirm){
+      error='Passwords do not match';
+      busy=false;
+      return;
     }
-    
-    // 验证密码强度
+
+    // Validate password strength
     if(passwordError) {
       error = passwordError;
       busy=false;
       return;
     }
-    
-    // 验证用户名可用性
+
+    // Validate username availability
     if(!usernameAvailable) {
       error = 'Please choose a different username';
       busy=false;
@@ -102,11 +102,11 @@
     }
     
     try{
-      // 准备注册数据
+      // Prepare registration data
       console.log('Registration - selectedAvatar:', selectedAvatar);
       const registerData = { username, password, confirm, realname, birthdate, description };
-      
-      // 如果有自定义头像文件，先上传头像
+
+      // If there is a custom avatar file, upload the avatar first
       if (selectedAvatar === 'custom' && customAvatarFile) {
         console.log('Uploading custom avatar...');
         const formData = new FormData();
@@ -120,7 +120,7 @@
         registerData.avatar = uploadResponse.avatarUrl;
         console.log('Avatar uploaded:', uploadResponse.avatarUrl);
       } else if (selectedAvatar && selectedAvatar !== 'custom') {
-        // 使用默认头像
+        // Use default avatar
         const defaultAvatars = [
           { id: 'avatar-leo', src: '/avatars/avatar-leo.png' },
           { id: 'avatar-stevenshi', src: '/avatars/avatar-stevenshi.png' },
@@ -143,8 +143,8 @@
         method:'POST',
         body: JSON.stringify(registerData)
       });
-      
-      // 注册成功后跳转到登录页面
+
+      // Registration successful, redirecting to login page
       success='Registration successful! Redirecting to login...';
       setTimeout(()=> location.href='/login', 1000);
     }catch(e){ 
@@ -174,7 +174,7 @@
       <h2>Register DoraBlog</h2>
     </div>
     <form on:submit|preventDefault={submit}>
-      <!-- 用户名输入 -->
+      <!-- Username input -->
       <div class="input-group">
         <input 
           placeholder="username" 
@@ -194,7 +194,7 @@
         {/if}
       </div>
 
-      <!-- 密码输入 -->
+      <!-- Password input -->
       <div class="input-group">
         <input 
           type="password" 
@@ -210,11 +210,11 @@
           <div class="status-text success-text">✓ Password is valid</div>
         {/if}
       </div>
-      
-      <!-- 密码强度指示器组件 -->
+
+      <!-- Password strength indicator component -->
       <PasswordStrengthIndicator {password} />
 
-      <!-- 确认密码 -->
+      <!-- Confirm password -->
       <div class="input-group">
         <input 
           type="password" 
@@ -231,7 +231,7 @@
         {/if}
       </div>
 
-      <!-- 头像选择 -->
+      <!-- Avatar selection -->
       <div class="input-group">
         <div class="field-label">Avatar (optional)</div>
         <AvatarSelector 
@@ -240,7 +240,7 @@
         />
       </div>
 
-      <!-- 其他信息 -->
+      <!-- Other information -->
       <input placeholder="real name (optional)" bind:value={realname} />
       <input placeholder="birthdate (optional, e.g. 2000-01-01)" bind:value={birthdate} />
       <textarea placeholder="About me (optional)" bind:value={description}></textarea>
@@ -331,7 +331,7 @@
     margin: 12px 0;
   }
 
-  /* 头像选择器特殊样式 */
+  /* Avatar selection special styles */
   .input-group:has(.avatar-selector) {
     margin: 16px 0;
     padding: 14px;
@@ -340,8 +340,8 @@
     border: 1px solid rgba(11, 116, 216, 0.1);
     backdrop-filter: blur(10px);
   }
-  
-  /* 为注册页面的头像选择器添加特殊样式 */
+
+  /* Avatar selection special styles */
   .input-group :global(.avatar-selector .avatar-preview) {
     width: 90px;
     height: 90px;
@@ -401,7 +401,7 @@
     font-weight: 500;
   }
 
-  /* 状态文本 - 修复遮挡问题 */
+  /* Status text - fix overlap issue */
   .status-text {
     margin-top: 4px;
     font-size: 11px;
@@ -454,13 +454,13 @@
     box-shadow: 0 0 0 3px rgba(73,179,255,0.25);
   }
 
-  /* 错误状态 */
+  /* Error state */
   input.error {
     border-color: #d40000;
     box-shadow: 0 0 0 3px rgba(212,0,0,0.25);
   }
 
-  /* 成功状态 */
+  /* Success state */
   input.success {
     border-color: #009944;
     box-shadow: 0 0 0 3px rgba(0,153,68,0.25);
