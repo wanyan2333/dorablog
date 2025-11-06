@@ -174,10 +174,10 @@ router.post("/login", async (req, res) => {
   }
 });
 
-/** POST /api/auth/logout → clear Cookie */
+/** POST /api/auth/logout → clear Cookie and return 204 */
 router.post("/logout", (req, res) => {
   res.clearCookie("token");
-  return res.json({ message: "Logout successful" });
+  return res.sendStatus(204);
 });
 
 /** GET /api/auth/userInfo → return current user */

@@ -14,8 +14,14 @@ const router = express.Router();
  * Sending a GET request to /api/users/ will return an array of all users in the system.
  *
  * This route is protected by the requireAuth middleware, so only admin users can access it.
+ * Returns 401 if unauthenticated, 403 if authenticated but not admin.
  */
 router.get("/", requireAuth, (req, res) => {
+  // Check if user is admin
+  if (!req.user.admin) {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+  
   getAllUsers().then((users) => {
     return res.status(200).json(users);
   });
@@ -111,6 +117,11 @@ router.delete("/me", requireAuth, async (req, res) => {
  */
 router.delete("/:id", requireAuth, async (req, res) => {
   try {
+    // Check if user is admin
+    if (!req.user.admin) {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+    
     const userId = parseInt(req.params.id);
 
     // Check if user exists
