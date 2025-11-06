@@ -79,4 +79,4 @@ If team-members don't need to use PR, then they should be working on feature bra
 
 Correct and **timely** execution of the PR process with evidence of good code review can contribute **significantly** to a better codebase and team member collaboration.
 
-![](./Blue%20Cat%20Four.png)
+![](./Blue%20Cat%20Four.jpg)
