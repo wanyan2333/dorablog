@@ -38,6 +38,7 @@ see the APIsDoc.md in backend folder
 ## Description of all pages
 
 Homepage:
+This is the main landing page of the blog system, featuring a navigation bar at the top for accessing different sections of the site including Home, Articles, New Post (for logged-in users), Profile (for logged-in users), Login, and Register. The main content area displays the four most popular articles based on like count, each presented as a card showing the header image, title, author, and like count. Users can like articles directly from the homepage, and if they are not logged in, a toast notification will appear prompting them to log in to like articles. Below the articles section, there is a daily  quote module that fetches random quotes from external APIs, with a refresh button to get new quotes. The page features a responsive design that adapts to different screen sizes and supports both light and dark themes. When users click on any article card, they are navigated to the detailed article page. A footer component is included at the bottom of the page providing additional information.
 
 Newpost:
 This page is used to create and publish new articles. It includes a rich text editor that supports formatting options such as bold, italic, and underline. You can add up to one header image and insert up to nine images within the content. Each article must include a title and an appropriate tag (Technology, Entertainment, Health, Travel, Lifestyle, or News). It’s very easy to use: enter your title, select a tag, write your content, add images if needed, and then click “Publish Article”. After publishing, you will be automatically redirected to the article’s view page. If the user is not logged in, this page will automatically redirect to the login page.
@@ -60,7 +61,7 @@ Press the login button to login with a admin account(Leo 123456). After login, t
 
 # Additional dependency
 
-tinymce-svelte(for article editting), bcrypt(for passsword hashing and salting), jsonwebtoken(for json web token)
+tinymce-svelte(for article editting), bcrypt(for passsword hashing and salting), jsonwebtoken(for json web token), quotable.io and adviceslip.com APIs(for daily inspirational quotes).
 
 ## Git
 
