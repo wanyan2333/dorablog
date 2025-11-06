@@ -49,10 +49,13 @@ Articles:
 This is the main article browsing page, where all blog posts are displayed as cards. Each card shows the cover image, article title, author, number of likes, and number of comments. The page provides a search function, tag filters, and sorting options (by date, title, or author). Logged-in users can also view the posts they have liked via the “My Likes” button. Users can enter keywords in the search box to search, select tags to filter, and choose a sorting method to find the desired article. Click any card to enter the article’s detail page.
 
 Login:
-
-Profile:
+This is a clean and simple authentication page for existing users to access their accounts. The page features a centered login card with a beautiful blurred background. Users need to enter their username and password to log in. The page includes a "Home" button in the top-left corner that allows users to return to the homepage without logging in. If the login credentials are correct, a success message "Login successful, redirecting..." will appear, and users will be automatically redirected to the homepage within 1 second. If the credentials are incorrect, an error message such as "Invalid credentials" will be displayed (not using alert popups, but styled inline messages). The system uses JWT token authentication with httpOnly cookies for security, and users will remain logged in for 7 days. At the bottom of the page, there's a link "Don't have an account yet? Register now" that directs users to the registration page.
 
 Register:
+This page allows new users to create an account on DoraBlog. The registration form includes several fields: The username field (required, minimum 3 characters) has real-time availability checking - as you type, it shows whether the username is available with a green checkmark or already taken with a red error message. The password field (required, minimum 6 characters) features a password strength indicator that displays a color-coded bar (red for weak, yellow for medium, green for strong) and provides real-time feedback. Users must enter the password twice in "Choose password" and "Confirm password" fields, and the page will show "Passwords do not match" or "✓ Passwords match" accordingly - the register button is disabled until passwords match. The avatar selection section is optional and allows users to choose from 8 predefined avatars (including team member avatars and Doraemon-themed options) or upload their own custom avatar with instant preview. Additional optional fields include real name, birthdate (with format YYYY-MM-DD), and an "About me" text area for a brief self-description. All validation happens in real-time with inline messages (not alert popups) using color-coded borders and feedback. The "Register" button is only enabled when all required fields are valid. Upon successful registration, users see the message "Registration successful! Redirecting to login..." and are automatically redirected to the login page where they can immediately log in with their new credentials. At the bottom, there's a link "Already have an account? Log in" for existing users. The page uses bcrypt for secure password hashing and includes protection against common security vulnerabilities.
+
+Profile:
+This is the user profile management page, accessible only to logged-in users. Unauthenticated users will be automatically redirected to the login page. The page displays "My Profile" at the top with an "Edit Profile" button. In view mode, the page shows the user's circular avatar, username, real name, birthdate, and personal description (About Me). Clicking the "Edit Profile" button enters edit mode, where all fields become editable. Users can change their avatar (choosing from predefined avatars or uploading a custom one), modify their username (the system will check username availability in real-time, showing error messages if the username is already taken), update their real name, birthdate, and personal description. Users can also choose to change their password, requiring them to enter and confirm the new password. After editing, click "Save Changes" to save modifications or "Cancel" to discard changes. At the bottom of the page, there's a red "Danger Zone" section with a "Delete Account" button for permanently deleting the account. Before deletion, users must type "DELETE" as a confirmation. The system warns that this action is irreversible and will permanently delete all articles and comments associated with the user.
 
 ## Description of how to use Java Swing admin interface
 
@@ -60,7 +63,7 @@ Press the login button to login with a admin account(Leo 123456). After login, t
 
 # Additional dependency
 
-tinymce-svelte(for article editting), bcrypt(for passsword hashing and salting), jsonwebtoken(for json web token)
+tinymce-svelte(for article editting), bcrypt(for password hashing and salting), jsonwebtoken(for json web token), multer(for article images and avatar upload)
 
 ## Git
 
